@@ -1,0 +1,12 @@
+{
+  "name": "fantasy-baseball-frontend",
+  "version": "1.0.0",
+  "description": "Fantasy Baseball Dashboard - Frontend",
+  "scripts": {
+    "start": "python3 -m http.server 8001",
+    "dev": "python3 -m http.server 8001"
+  },
+  "keywords": ["fantasy", "baseball", "dashboard"],
+  "author": "Steve <steveclawdbot@gmail.com>",
+  "license": "MIT"
+}
