@@ -95,3 +95,113 @@ class Team(Base):
     
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
+
+
+class Scout(Base):
+    """Scout model for user assessments of players."""
+    __tablename__ = "scouts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    player_id = Column(Integer, ForeignKey("players.id"), nullable=False, index=True)
+    scout_name = Column(String, nullable=False)  # Who made the assessment
+    
+    # Assessment
+    overall_rating = Column(Integer)  # 1-10
+    hit_rating = Column(Integer)  # 1-10
+    power_rating = Column(Integer)  # 1-10
+    speed_rating = Column(Integer)  # 1-10
+    fielding_rating = Column(Integer)  # 1-10
+    
+    # Notes
+    notes = Column(Text)
+    summary = Column(String(500))  # Brief summary
+    
+    # Tags/labels
+    tags = Column(JSON)  # ["breakout candidate", "sell high", "buy low"]
+    
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
+
+
+class ADPData(Base):
+    """ADP (Average Draft Position) tracking over time."""
+    __tablename__ = "adp_data"
+
+    id = Column(Integer, primary_key=True, index=True)
+    player_id = Column(Integer, ForeignKey("players.id"), nullable=False, index=True)
+    
+    # ADP info
+    adp = Column(Float, nullable=False)
+    min_pick = Column(Integer)
+    max_pick = Column(Integer)
+    
+    # Source and date
+    source = Column(String)  # "nfbc", "fantrax", "custom"
+    league_type = Column(String)  # "mixed", "only", " dynasty"
+    date_recorded = Column(DateTime, nullable=False)
+    
+    # Trend tracking
+    adp_change_7d = Column(Float)  # Change from 7 days ago
+    adp_change_30d = Column(Float)  # Change from 30 days ago
+    
+    created_at = Column(DateTime, server_default=func.now())
+
+
+class Prospect(Base):
+    """Prospect tracking and rankings."""
+    __tablename__ = "prospects"
+
+    id = Column(Integer, primary_key=True, index=True)
+    player_id = Column(Integer, ForeignKey("players.id"), nullable=False, index=True, unique=True)
+    
+    # Prospect rankings
+    overall_rank = Column(Integer)
+    position_rank = Column(Integer)
+    
+    # Future Value (scouting scale)
+    hit_future_value = Column(Integer)  # 20-80 scale
+    power_future_value = Column(Integer)
+    speed_future_value = Column(Integer)
+    field_future_value = Column(Integer)
+    overall_future_value = Column(Integer)
+    
+    # ETA and status
+    eta = Column(String)  # "2025", "2026", "2027+"
+    risk_level = Column(String)  # "low", "medium", "high"
+    
+    # Source
+    ranking_source = Column(String)  # "fangraphs", "baseballamerica", etc.
+    ranking_date = Column(DateTime)
+    
+    # Hype/notes
+    hype_score = Column(Float)  # 0-100
+    notes = Column(Text)
+    
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
+
+
+class TradeValue(Base):
+    """Player trade valuation over time."""
+    __tablename__ = "trade_values"
+
+    id = Column(Integer, primary_key=True, index=True)
+    player_id = Column(Integer, ForeignKey("players.id"), nullable=False, index=True)
+    
+    # Valuation
+    trade_value = Column(Integer)  # Points on trade value chart
+    value_tier = Column(String)  # "elite", "strong", "solid", "fringe"
+    
+    # Context
+    league_type = Column(String)  # "dynasty", "redraft"
+    format = Column(String)  # "5x5", "points", etc.
+    
+    # Change tracking
+    value_change_7d = Column(Integer)
+    value_change_30d = Column(Integer)
+    
+    # Metadata
+    valuation_date = Column(DateTime, nullable=False)
+    source = Column(String)  # "calculator", "custom", etc.
+    
+    created_at = Column(DateTime, server_default=func.now())
