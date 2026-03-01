@@ -1,14 +1,14 @@
 """Tests for PR #11 review items: migration, legacy table conflicts, CLI validation."""
 
+import argparse
 import asyncio
-import subprocess
-import sys
 
 import aiosqlite
 import pytest
 
 from etl.schema.migrate import run_migrations
 from etl.schema.serving import create_serving_views, SERVING_VIEW_NAMES
+from etl.runner import _parse_season_range
 
 
 @pytest.fixture
@@ -90,29 +90,19 @@ class TestLegacyTableConflict:
 
 
 # -----------------------------------------------------------------------
-# 3. CLI --seasons validation
+# 3. CLI --seasons validation (unit tests — no subprocess / network)
 # -----------------------------------------------------------------------
 class TestSeasonsCliValidation:
-    def _run_cli(self, *args):
-        result = subprocess.run(
-            [sys.executable, "-m", "etl.runner", *args],
-            capture_output=True, text=True,
-        )
-        return result
-
     def test_invalid_seasons_format_errors(self):
-        result = self._run_cli("--source", "batting", "--seasons", "abc")
-        assert result.returncode != 0
-        assert "YYYY-YYYY" in result.stderr
+        with pytest.raises(argparse.ArgumentTypeError, match="YYYY-YYYY"):
+            _parse_season_range("abc")
 
     def test_reversed_years_errors(self):
-        result = self._run_cli("--source", "batting", "--seasons", "2025-2020")
-        assert result.returncode != 0
-        assert "must be <=" in result.stderr
+        with pytest.raises(argparse.ArgumentTypeError, match="must be <="):
+            _parse_season_range("2025-2020")
 
     def test_valid_seasons_format_accepted(self):
-        # Just check it parses without error — will fail at extract (no network)
-        # but should not fail at argument parsing
-        result = self._run_cli("--source", "batting", "--seasons", "2024-2024")
-        # If argparse failed, returncode=2 and "YYYY-YYYY" in stderr
-        assert "YYYY-YYYY" not in result.stderr
+        assert _parse_season_range("2024-2024") == (2024, 2024)
+
+    def test_valid_range(self):
+        assert _parse_season_range("2020-2025") == (2020, 2025)

@@ -262,6 +262,7 @@ async def create_serving_views(db) -> None:
         row = await cursor.fetchone()
         if row:
             if row[0] == "table":
+                await db.execute(f"DROP TABLE IF EXISTS [_legacy_{view_name}]")
                 await db.execute(
                     f"ALTER TABLE [{view_name}] RENAME TO [_legacy_{view_name}]"
                 )
