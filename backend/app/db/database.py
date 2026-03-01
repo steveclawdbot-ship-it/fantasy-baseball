@@ -30,6 +30,16 @@ Base = declarative_base()
 async def init_db():
     """Initialize database tables."""
     try:
+        # Run ETL schema migrations (staging, core, serving) before ORM tables
+        try:
+            from etl.schema.migrate import run_migrations
+            from etl.db import get_connection
+            async with get_connection() as etl_db:
+                await run_migrations(etl_db)
+            logger.info("ETL schema migrations applied.")
+        except Exception as mig_err:
+            logger.warning(f"ETL migration skipped (non-fatal): {mig_err}")
+
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         logger.info("Database tables created successfully.")

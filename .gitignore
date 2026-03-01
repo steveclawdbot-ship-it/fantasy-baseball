@@ -75,3 +75,7 @@ coverage.xml
 *.sqlite3
 backend/*.db
 backend/*.sqlite
+
+# Local logs and plans
+.logs/
+.plans/
