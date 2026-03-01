@@ -209,7 +209,9 @@
               <option value="30d">Last 30d</option>
             </select>
             <button class="btn" onclick="loadTrends()">Apply</button>
+            <button class="btn" onclick="syncTrends()">Sync Window Data</button>
           </div>
+          <div id="trends-meta" class="muted" style="margin-bottom:8px;"></div>
           <div id="trends-kpis" class="kpi-grid"></div>
         </article>
         <article class="panel" style="margin-top:12px;">
@@ -238,6 +240,10 @@
           <p class="muted" style="margin:0 0 10px;">NFBC-style exposure view from tracked league rosters.</p>
           <div id="leagues-meta" class="muted" style="margin-bottom:8px;"></div>
           <div id="leagues-table"></div>
+          <div style="margin-top:12px;">
+            <h4 style="margin:0 0 8px;">League Summary</h4>
+            <div id="leagues-by-league"></div>
+          </div>
         </article>
       </section>
     </main>
@@ -332,15 +338,32 @@
       ]);
     }
 
+    async function syncTrends() {
+      const window = document.getElementById('trend-window').value;
+      const meta = document.getElementById('trends-meta');
+      meta.textContent = 'syncing trend window data...';
+      try {
+        const r = await fetch(`${API_BASE}/stats/trends/sync?window=${window}`, { method: 'POST' });
+        if (!r.ok) throw new Error('sync failed');
+        const data = await r.json();
+        meta.textContent = `synced ${data.rows_upserted || 0} rows for ${window}`;
+        await loadTrends();
+      } catch (e) {
+        meta.textContent = `sync failed: ${e.message}`;
+      }
+    }
+
     async function loadTrends() {
       const window = document.getElementById('trend-window').value;
       const resp = await fetch(`${API_BASE}/stats/trends/overview?window=${window}`);
       if (!resp.ok) {
+        document.getElementById('trends-meta').textContent = 'Unable to load trends.';
         document.getElementById('trends-kpis').innerHTML = '<p class="muted">Unable to load trends.</p>';
         document.getElementById('trends-table').innerHTML = '';
         return;
       }
       const data = await resp.json();
+      document.getElementById('trends-meta').textContent = `${data.window_label} • source: ${data.source}${data.note ? ` • ${data.note}` : ''}`;
       const kpis = [
         { label: `Window`, value: data.window_label },
         { label: 'Tracked players', value: data.metrics.tracked_players },
@@ -387,17 +410,25 @@
       if (!resp.ok) {
         document.getElementById('leagues-meta').textContent = 'Unable to load league exposure.';
         document.getElementById('leagues-table').innerHTML = '';
+        document.getElementById('leagues-by-league').innerHTML = '';
         return;
       }
       const d = await resp.json();
       document.getElementById('leagues-meta').textContent = d.status === 'empty'
-        ? 'No roster records loaded yet. This module is ready for your real roster ingest.'
-        : `Tracking ${d.team_count} teams.`;
+        ? 'No roster records loaded yet. POST /api/leagues/rosters/import to load your real leagues.'
+        : `Tracking ${d.team_count} teams across ${d.league_count} leagues.`;
 
       renderTable('leagues-table', d.rows || [], [
         { key: 'player_name', label: 'Player' },
         { key: 'teams_holding', label: 'Teams Holding' },
+        { key: 'leagues_holding', label: 'Leagues Holding' },
         { key: 'exposure_pct', label: 'Exposure %' },
+      ]);
+
+      renderTable('leagues-by-league', d.by_league || [], [
+        { key: 'league_name', label: 'League' },
+        { key: 'teams', label: 'Teams' },
+        { key: 'roster_slots', label: 'Roster Slots' },
       ]);
     }
 

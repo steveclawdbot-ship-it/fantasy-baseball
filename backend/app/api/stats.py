@@ -1,3 +1,4 @@
+from datetime import date, datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
@@ -5,6 +6,11 @@ from typing import List, Optional
 from app.db.database import get_db
 from app.services.stats_service import create_stats_service
 import logging
+
+try:
+    from pybaseball import batting_stats_range
+except Exception:
+    batting_stats_range = None
 
 logger = logging.getLogger(__name__)
 
@@ -133,56 +139,202 @@ QUERY_PRESETS = {
 }
 
 
+async def ensure_daily_trends_table(db: AsyncSession):
+    await db.execute(text("""
+        CREATE TABLE IF NOT EXISTS player_daily_trends (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            game_date TEXT NOT NULL,
+            player_name TEXT NOT NULL,
+            team TEXT,
+            hr INTEGER DEFAULT 0,
+            sb INTEGER DEFAULT 0,
+            avg REAL,
+            ops REAL,
+            pa INTEGER DEFAULT 0,
+            source TEXT DEFAULT 'pybaseball',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(game_date, player_name)
+        )
+    """))
+    await db.execute(text("CREATE INDEX IF NOT EXISTS idx_daily_trends_game_date ON player_daily_trends(game_date)"))
+
+
+@router.post("/trends/sync")
+async def sync_trends_window(
+    window: str = Query("7d", pattern="^(today|7d|30d)$"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Pull day-window trends from pybaseball and persist for dashboard windows."""
+    if batting_stats_range is None:
+        raise HTTPException(status_code=500, detail="pybaseball not available in backend runtime")
+
+    days = {"today": 1, "7d": 7, "30d": 30}[window]
+    end_date = date.today()
+    start_date = end_date - timedelta(days=days - 1)
+
+    try:
+        await ensure_daily_trends_table(db)
+
+        try:
+            df = batting_stats_range(start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d"))
+        except Exception as fetch_err:
+            logger.warning(f"batting_stats_range unavailable for {start_date}..{end_date}: {fetch_err}")
+            return {
+                "status": "empty",
+                "window": window,
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "rows_upserted": 0,
+                "reason": str(fetch_err),
+            }
+
+        if df is None or len(df) == 0:
+            return {
+                "status": "empty",
+                "window": window,
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "rows_upserted": 0,
+            }
+
+        target_game_date = end_date.isoformat()
+        upserted = 0
+        for _, row in df.iterrows():
+            name = row.get("Name")
+            if not name:
+                continue
+
+            await db.execute(text("""
+                INSERT INTO player_daily_trends (game_date, player_name, team, hr, sb, avg, ops, pa, source)
+                VALUES (:game_date, :player_name, :team, :hr, :sb, :avg, :ops, :pa, :source)
+                ON CONFLICT(game_date, player_name)
+                DO UPDATE SET
+                  team=excluded.team,
+                  hr=excluded.hr,
+                  sb=excluded.sb,
+                  avg=excluded.avg,
+                  ops=excluded.ops,
+                  pa=excluded.pa,
+                  source=excluded.source
+            """), {
+                "game_date": target_game_date,
+                "player_name": name,
+                "team": row.get("Tm") or "",
+                "hr": int(row.get("HR") or 0),
+                "sb": int(row.get("SB") or 0),
+                "avg": float(row.get("AVG")) if row.get("AVG") is not None else None,
+                "ops": float(row.get("OPS")) if row.get("OPS") is not None else None,
+                "pa": int(row.get("PA") or 0),
+                "source": "pybaseball",
+            })
+            upserted += 1
+
+        await db.commit()
+        return {
+            "status": "ok",
+            "window": window,
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat(),
+            "rows_upserted": upserted,
+        }
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Failed to sync trends window: {e}")
+        raise HTTPException(status_code=500, detail="Failed to sync trends window")
+
+
 @router.get("/trends/overview")
 async def get_trends_overview(
     window: str = Query("7d", pattern="^(today|7d|30d)$"),
     db: AsyncSession = Depends(get_db),
 ):
-    """Trends overview scaffold for today / last 7d / last 30d dashboard surface."""
+    """Trends overview for today / last 7d / last 30d; prefers daily trend table if populated."""
     try:
-        latest_season_q = await db.execute(text("SELECT MAX(season) FROM player_stats"))
-        season = latest_season_q.scalar() or 2025
+        await ensure_daily_trends_table(db)
+
+        days = {"today": 1, "7d": 7, "30d": 30}[window]
+        end_date = date.today()
+        start_date = end_date - timedelta(days=days - 1)
 
         summary = await db.execute(text("""
             SELECT
-              COUNT(DISTINCT ps.player_id) AS player_count,
-              AVG(ps.hr) AS avg_hr,
-              AVG(ps.ops) AS avg_ops,
-              AVG(ps.sb) AS avg_sb
-            FROM player_stats ps
-            WHERE ps.season = :season
-        """), {"season": season})
+              COUNT(DISTINCT player_name) AS player_count,
+              AVG(hr) AS avg_hr,
+              AVG(ops) AS avg_ops,
+              AVG(sb) AS avg_sb,
+              COUNT(*) AS row_count
+            FROM player_daily_trends
+            WHERE game_date BETWEEN :start_date AND :end_date
+        """), {"start_date": start_date.isoformat(), "end_date": end_date.isoformat()})
         s = summary.fetchone()
 
-        leaders = await db.execute(text("""
-            SELECT p.name, ps.hr, ps.ops, ps.sb
-            FROM player_stats ps
-            JOIN players p ON p.id = ps.player_id
-            WHERE ps.season = :season
-            ORDER BY ps.hr DESC
-            LIMIT 12
-        """), {"season": season})
+        use_fallback = (s is None) or int(s.row_count or 0) == 0
 
-        rows = [dict(r._mapping) for r in leaders.fetchall()]
+        if not use_fallback:
+            leaders = await db.execute(text("""
+                SELECT
+                  player_name AS name,
+                  SUM(hr) AS hr,
+                  ROUND(AVG(ops), 3) AS ops,
+                  SUM(sb) AS sb
+                FROM player_daily_trends
+                WHERE game_date BETWEEN :start_date AND :end_date
+                GROUP BY player_name
+                ORDER BY hr DESC, ops DESC
+                LIMIT 20
+            """), {"start_date": start_date.isoformat(), "end_date": end_date.isoformat()})
+            rows = [dict(r._mapping) for r in leaders.fetchall()]
 
-        window_labels = {
-            "today": "today",
-            "7d": "last 7 days",
-            "30d": "last 30 days",
-        }
-
-        return {
-            "window": window,
-            "window_label": window_labels[window],
-            "season": season,
-            "metrics": {
+            metrics = {
                 "tracked_players": int(s.player_count or 0),
                 "avg_hr": round(float(s.avg_hr or 0), 2),
                 "avg_ops": round(float(s.avg_ops or 0), 3),
                 "avg_sb": round(float(s.avg_sb or 0), 2),
-            },
+            }
+            note = None
+            source = "daily_trends"
+        else:
+            latest_season_q = await db.execute(text("SELECT MAX(season) FROM player_stats"))
+            season = latest_season_q.scalar() or datetime.now().year
+
+            fallback_summary = await db.execute(text("""
+                SELECT
+                  COUNT(DISTINCT ps.player_id) AS player_count,
+                  AVG(ps.hr) AS avg_hr,
+                  AVG(ps.ops) AS avg_ops,
+                  AVG(ps.sb) AS avg_sb
+                FROM player_stats ps
+                WHERE ps.season = :season
+            """), {"season": season})
+            fs = fallback_summary.fetchone()
+
+            leaders = await db.execute(text("""
+                SELECT p.name, ps.hr, ps.ops, ps.sb
+                FROM player_stats ps
+                JOIN players p ON p.id = ps.player_id
+                WHERE ps.season = :season
+                ORDER BY ps.hr DESC
+                LIMIT 20
+            """), {"season": season})
+            rows = [dict(r._mapping) for r in leaders.fetchall()]
+            metrics = {
+                "tracked_players": int(fs.player_count or 0),
+                "avg_hr": round(float(fs.avg_hr or 0), 2),
+                "avg_ops": round(float(fs.avg_ops or 0), 3),
+                "avg_sb": round(float(fs.avg_sb or 0), 2),
+            }
+            note = "Using seasonal fallback. Run POST /api/stats/trends/sync to hydrate true day-window trends."
+            source = "seasonal_fallback"
+
+        window_labels = {"today": "today", "7d": "last 7 days", "30d": "last 30 days"}
+        return {
+            "window": window,
+            "window_label": window_labels[window],
+            "date_range": {"start": start_date.isoformat(), "end": end_date.isoformat()},
+            "metrics": metrics,
             "leaders": rows,
-            "note": "Scaffold trends endpoint using current seasonal dataset. Replace with true game-window aggregates as live game ETL lands.",
+            "source": source,
+            "note": note,
         }
     except Exception as e:
         logger.error(f"Failed to load trends overview: {e}")
