@@ -121,7 +121,7 @@ async def update_player(player_id: int, player_data: dict, db: AsyncSession = De
     Writes to core_player directly since 'players' is a read-only view.
     """
     # Verify the player exists
-    check = await db.execute(text("SELECT id FROM core_player WHERE id = :id"), {"id": player_id})
+    check = await db.execute(text("SELECT id FROM core_player WHERE id = :id AND is_active = 1"), {"id": player_id})
     if check.first() is None:
         raise HTTPException(status_code=404, detail="Player not found")
 

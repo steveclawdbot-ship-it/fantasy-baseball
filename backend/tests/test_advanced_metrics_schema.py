@@ -6,10 +6,7 @@ Run: pytest backend/tests/test_advanced_metrics_schema.py -v
 
 import pytest
 import asyncio
-import sys
 from datetime import datetime
-
-sys.path.insert(0, '/home/jesse/clawd-steve/fantasy-baseball/backend')
 
 from sqlalchemy import select
 from app.db.database import AsyncSessionLocal
