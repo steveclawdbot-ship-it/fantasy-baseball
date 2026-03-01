@@ -68,7 +68,7 @@ class PlayerCard(Base):
     __tablename__ = "player_cards"
 
     id = Column(Integer, primary_key=True, index=True)
-    player_id = Column(Integer, ForeignKey("players.id"), nullable=False)
+    player_id = Column(Integer, ForeignKey("core_player.id"), nullable=False)
     notes = Column(Text)
     tags = Column(JSON)  # ["power hitter", "speed", "prospect"]
     rating = Column(Integer)  # 1-10 scale

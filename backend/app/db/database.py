@@ -1,3 +1,4 @@
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 import logging
@@ -5,10 +6,9 @@ import os
 
 logger = logging.getLogger(__name__)
 
-# Keep one canonical DB path across API + ETL + crawlers.
-DEFAULT_DB_PATH = "/home/jesse/clawd-steve/data/fantasy_baseball.db"
-DB_PATH = os.getenv("FANTASY_DB_PATH", DEFAULT_DB_PATH)
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{DB_PATH}")
+# SQLite database URL — use the same env var as the ETL pipeline
+_db_path = os.getenv("FANTASY_DB_PATH", "./fantasy_baseball.db")
+DATABASE_URL = f"sqlite+aiosqlite:///{_db_path}"
 
 # Create async engine
 engine = create_async_engine(
@@ -16,6 +16,14 @@ engine = create_async_engine(
     connect_args={"check_same_thread": False},
     echo=False  # Set to True for SQL query logging
 )
+
+
+# Enable SQLite foreign key enforcement for every connection (matches etl/db.py)
+@event.listens_for(engine.sync_engine, "connect")
+def _set_sqlite_pragma(dbapi_conn, connection_record):
+    cursor = dbapi_conn.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 # Create async session factory
 AsyncSessionLocal = async_sessionmaker(
@@ -31,6 +39,16 @@ Base = declarative_base()
 async def init_db():
     """Initialize database tables."""
     try:
+        # Run ETL schema migrations (staging, core, serving) before ORM tables
+        try:
+            from etl.schema.migrate import run_migrations
+            from etl.db import get_connection
+            async with get_connection(_db_path) as etl_db:
+                await run_migrations(etl_db)
+            logger.info("ETL schema migrations applied.")
+        except Exception as mig_err:
+            logger.warning(f"ETL migration skipped (non-fatal): {mig_err}")
+
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         logger.info("Database tables created successfully.")

@@ -69,14 +69,46 @@ async def get_player_by_espn_id(espn_id: int, db: AsyncSession = Depends(get_db)
 
 @router.post("/", response_model=dict)
 async def create_player(player_data: dict, db: AsyncSession = Depends(get_db)):
-    """Create a new player."""
+    """Create a new player.
+
+    Writes to core_player (and core_player_source_id for espn_id) since
+    the 'players' name is now a read-only serving view.
+    """
     try:
-        player = Player(**player_data)
-        db.add(player)
+        name = player_data.get("name")
+        if not name:
+            raise HTTPException(status_code=400, detail="'name' is required")
+
+        result = await db.execute(
+            text(
+                "INSERT INTO core_player (display_name, position, mlb_team, player_level, created_at, updated_at) "
+                "VALUES (:name, :position, :team, 'MLB', datetime('now'), datetime('now'))"
+            ),
+            {"name": name, "position": player_data.get("position"), "team": player_data.get("team")},
+        )
+        await db.flush()
+        player_id = result.lastrowid
+
+        espn_id = player_data.get("espn_id")
+        if espn_id is not None:
+            await db.execute(
+                text(
+                    "INSERT INTO core_player_source_id (player_id, source, source_player_id, confidence, matched_by, created_at) "
+                    "VALUES (:pid, 'espn', :eid, 1.0, 'manual', datetime('now')) "
+                    "ON CONFLICT(source, source_player_id) DO UPDATE SET player_id = excluded.player_id"
+                ),
+                {"pid": player_id, "eid": str(espn_id)},
+            )
+
         await db.commit()
-        await db.refresh(player)
-        logger.info(f"Created player: {player.name}")
-        return player.to_dict()
+        logger.info(f"Created player: {name} (core_player.id={player_id})")
+
+        # Read back through the view so the response matches the expected schema
+        row = await db.execute(select(Player).where(Player.id == player_id))
+        player = row.scalar_one_or_none()
+        return player.to_dict() if player else {"id": player_id, "name": name}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to create player: {e}")
         raise HTTPException(status_code=400, detail="Failed to create player")
@@ -84,37 +116,68 @@ async def create_player(player_data: dict, db: AsyncSession = Depends(get_db)):
 
 @router.put("/{player_id}", response_model=dict)
 async def update_player(player_id: int, player_data: dict, db: AsyncSession = Depends(get_db)):
-    """Update a player."""
-    query = select(Player).where(Player.id == player_id)
-    result = await db.execute(query)
-    player = result.scalar_one_or_none()
-    
+    """Update a player.
+
+    Writes to core_player directly since 'players' is a read-only view.
+    """
+    # Verify the player exists
+    check = await db.execute(text("SELECT id FROM core_player WHERE id = :id AND is_active = 1"), {"id": player_id})
+    if check.first() is None:
+        raise HTTPException(status_code=404, detail="Player not found")
+
+    # Map view column names to core_player columns
+    col_map = {"name": "display_name", "team": "mlb_team", "position": "position", "player_level": "player_level"}
+    sets = []
+    params: dict = {"id": player_id}
+    for key, value in player_data.items():
+        if key == "id":
+            continue
+        core_col = col_map.get(key)
+        if core_col:
+            sets.append(f"{core_col} = :{key}")
+            params[key] = value
+        elif key == "espn_id" and value is not None:
+            await db.execute(
+                text(
+                    "INSERT INTO core_player_source_id (player_id, source, source_player_id, confidence, matched_by, created_at) "
+                    "VALUES (:pid, 'espn', :eid, 1.0, 'manual', datetime('now')) "
+                    "ON CONFLICT(source, source_player_id) DO UPDATE SET player_id = excluded.player_id"
+                ),
+                {"pid": player_id, "eid": str(value)},
+            )
+
+    if sets:
+        sets.append("updated_at = datetime('now')")
+        await db.execute(text(f"UPDATE core_player SET {', '.join(sets)} WHERE id = :id"), params)
+
+    await db.commit()
+
+    row = await db.execute(select(Player).where(Player.id == player_id))
+    player = row.scalar_one_or_none()
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
-    
-    for key, value in player_data.items():
-        if hasattr(player, key) and key != "id":
-            setattr(player, key, value)
-    
-    await db.commit()
-    await db.refresh(player)
+
     logger.info(f"Updated player: {player.name}")
     return player.to_dict()
 
 
 @router.delete("/{player_id}")
 async def delete_player(player_id: int, db: AsyncSession = Depends(get_db)):
-    """Delete a player."""
-    query = select(Player).where(Player.id == player_id)
-    result = await db.execute(query)
-    player = result.scalar_one_or_none()
-    
-    if not player:
+    """Soft-delete a player.
+
+    Sets is_active = 0 on core_player rather than hard-deleting, to avoid
+    orphaning rows in the 10+ core_* tables that reference core_player(id).
+    """
+    check = await db.execute(text("SELECT id FROM core_player WHERE id = :id AND is_active = 1"), {"id": player_id})
+    if check.first() is None:
         raise HTTPException(status_code=404, detail="Player not found")
-    
-    await db.delete(player)
+
+    await db.execute(
+        text("UPDATE core_player SET is_active = 0, updated_at = datetime('now') WHERE id = :id"),
+        {"id": player_id},
+    )
     await db.commit()
-    logger.info(f"Deleted player ID: {player_id}")
+    logger.info(f"Soft-deleted player ID: {player_id}")
     return {"message": "Player deleted successfully"}
 
 

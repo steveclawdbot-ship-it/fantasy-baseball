@@ -43,7 +43,7 @@ fi
 "$VENV/bin/python" -m pip install -q --upgrade pip
 "$VENV/bin/python" -m pip install -q -r "$ROOT/backend/requirements.txt"
 
-export FANTASY_DB_PATH="${FANTASY_DB_PATH:-/home/jesse/clawd-steve/data/fantasy_baseball.db}"
+export FANTASY_DB_PATH="${FANTASY_DB_PATH:-$ROOT/fantasy_baseball.db}"
 
 echo "[run] starting backend on http://$API_HOST:$API_PORT"
 (
