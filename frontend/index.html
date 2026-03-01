@@ -3,79 +3,106 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>fantasy intelligence dashboard</title>
+  <title>Fantasy Baseball Dashboard</title>
   <style>
     :root {
-      --bg: #0b1220;
-      --panel: #111a2b;
-      --panel-2: #0f1726;
-      --line: #1f2d45;
-      --text: #e6edf8;
-      --muted: #8fa1c1;
-      --accent: #22c55e;
-      --accent-2: #38bdf8;
-      --danger: #f87171;
-      --warn: #fbbf24;
-      --shadow: 0 18px 60px rgba(2, 8, 23, 0.5);
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --line: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --brand: #2563eb;
+      --brand-soft: #dbeafe;
+      --good: #16a34a;
+      --bad: #dc2626;
+      --radius: 16px;
+      --shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
     }
 
     * { box-sizing: border-box; }
-
-    html, body {
+    body {
       margin: 0;
-      padding: 0;
-      background: radial-gradient(1200px 700px at 80% -10%, #1c315e33, transparent), var(--bg);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
       color: var(--text);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      min-height: 100dvh;
     }
 
-    .shell {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 24px;
+    .app {
       min-height: 100dvh;
       display: grid;
-      gap: 16px;
+      grid-template-columns: 260px 1fr;
+    }
+
+    .siderail {
+      border-right: 1px solid var(--line);
+      background: var(--surface);
+      padding: 20px 14px;
+      position: sticky;
+      top: 0;
+      height: 100dvh;
+    }
+
+    .brand {
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 10px 12px 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .nav {
+      display: grid;
+      gap: 6px;
+    }
+
+    .nav-btn {
+      border: 1px solid transparent;
+      background: transparent;
+      text-align: left;
+      height: 42px;
+      border-radius: 12px;
+      padding: 0 12px;
+      color: #334155;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .nav-btn.active {
+      background: var(--brand-soft);
+      border-color: #bfdbfe;
+      color: #1d4ed8;
+    }
+
+    .content {
+      padding: 22px;
+      display: grid;
+      gap: 14px;
+      max-width: 1400px;
+      width: 100%;
     }
 
     .topbar {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      padding: 14px 18px;
+      gap: 8px;
       border: 1px solid var(--line);
-      border-radius: 16px;
-      background: linear-gradient(180deg, #131f35, #0d1525);
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 14px 16px;
       box-shadow: var(--shadow);
-      position: sticky;
-      top: 12px;
-      z-index: 20;
-      backdrop-filter: blur(8px);
     }
 
-    .brand h1 {
-      margin: 0;
-      font-size: 1.1rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
+    .title { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
+    .muted { color: var(--muted); }
 
-    .brand p {
-      margin: 2px 0 0;
-      color: var(--muted);
-      font-size: 0.82rem;
-    }
-
-    .badge {
-      border: 1px solid #2b3d5f;
-      background: #0e1a2f;
-      color: #b7c6e0;
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 0.76rem;
-      font-weight: 600;
+    .panel {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
     }
 
     .kpi-grid {
@@ -84,415 +111,312 @@
       gap: 12px;
     }
 
-    .kpi {
-      border: 1px solid var(--line);
-      background: linear-gradient(180deg, #121d32, #0e1727);
-      border-radius: 14px;
-      padding: 14px;
-      box-shadow: var(--shadow);
-    }
+    .kpi { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: var(--surface-2); }
+    .kpi .label { color: var(--muted); font-size: 0.82rem; }
+    .kpi .value { font-size: 1.5rem; font-weight: 700; margin-top: 6px; }
 
-    .kpi .label { color: var(--muted); font-size: 0.8rem; }
-    .kpi .value { margin-top: 6px; font-size: 1.6rem; font-weight: 700; letter-spacing: -0.03em; }
+    .split { display: grid; grid-template-columns: 1.5fr 1fr; gap: 12px; }
+    .stack { display: grid; gap: 12px; }
 
-    .layout {
-      display: grid;
-      grid-template-columns: 1.5fr 1fr;
-      gap: 12px;
-    }
+    .table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    .table th, .table td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+    .table th { color: #334155; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
 
-    .card {
-      border: 1px solid var(--line);
-      background: linear-gradient(180deg, var(--panel), var(--panel-2));
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: var(--shadow);
-    }
-
-    .card h2 {
-      margin: 0 0 12px;
-      font-size: 1rem;
-      letter-spacing: -0.01em;
-      color: #d6e3f8;
-    }
-
-    .toolbar {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
     .input, .select, .btn {
+      height: 38px;
       border-radius: 10px;
-      border: 1px solid #2b3c5e;
-      background: #0d182b;
-      color: #dbe8fb;
-      height: 40px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: #0f172a;
       padding: 0 12px;
       font-size: 0.9rem;
     }
+    .btn { background: #eff6ff; color: #1d4ed8; font-weight: 600; cursor: pointer; }
 
-    .btn {
-      background: linear-gradient(180deg, #1d4ed8, #1e40af);
-      border-color: #2f5ae1;
-      cursor: pointer;
-      font-weight: 600;
-      transition: transform 120ms ease, filter 120ms ease;
-    }
+    .chip { display: inline-block; padding: 3px 8px; border-radius: 999px; border: 1px solid #cbd5e1; font-size: 0.75rem; color: #334155; }
+    .good { color: var(--good); }
+    .bad { color: var(--bad); }
 
-    .btn:active { transform: translateY(1px) scale(0.99); }
-    .btn:hover { filter: brightness(1.06); }
-
-    .table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.88rem;
-    }
-
-    .table th, .table td {
-      text-align: left;
-      padding: 9px 8px;
-      border-bottom: 1px solid #1d2c47;
-      vertical-align: middle;
-    }
-
-    .table th { color: #9fb0ce; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
-    .table tr:hover td { background: #101d33; }
-
-    .metric { color: #c9d8f3; font-variant-numeric: tabular-nums; }
-    .chip {
-      border: 1px solid #2b3f63;
-      border-radius: 999px;
-      font-size: 0.72rem;
-      padding: 2px 8px;
-      color: #9cb2d8;
-      display: inline-block;
-    }
-
-    .signal-pos { color: var(--accent); }
-    .signal-neg { color: var(--danger); }
-    .signal-neutral { color: var(--muted); }
-
-    .stack { display: grid; gap: 12px; }
-
-    .mini-list { display: grid; gap: 8px; }
-    .mini-item {
-      border: 1px solid #20314f;
-      border-radius: 10px;
-      padding: 10px;
-      background: #0e192c;
-      display: grid;
-      gap: 2px;
-    }
-
-    .mini-item .title { font-size: 0.88rem; font-weight: 600; }
-    .mini-item .meta { color: var(--muted); font-size: 0.78rem; }
-
-    .sentiment-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-      margin-top: 8px;
-    }
-
-    .muted { color: var(--muted); }
-    .error {
-      border: 1px solid #7f1d1d;
-      background: #3a1212;
-      color: #fecaca;
-      padding: 10px 12px;
-      border-radius: 10px;
-      margin-bottom: 10px;
-    }
-
-    .skeleton {
-      height: 74px;
-      border-radius: 10px;
-      background: linear-gradient(90deg, #17253d 20%, #223759 45%, #17253d 70%);
-      background-size: 220% 100%;
-      animation: shimmer 1.4s infinite;
-      border: 1px solid #223352;
-    }
-
-    @keyframes shimmer {
-      0% { background-position: 200% 0; }
-      100% { background-position: -40% 0; }
-    }
+    .hidden { display: none !important; }
 
     @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      .siderail {
+        position: static;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .nav-btn { text-align: center; padding: 0; }
       .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .layout { grid-template-columns: 1fr; }
-      .toolbar { grid-template-columns: 1fr; }
-      .sentiment-grid { grid-template-columns: 1fr; }
+      .split { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <div class="shell">
-    <header class="topbar">
-      <div class="brand">
-        <h1>fantasy baseball intelligence</h1>
-        <p>players, trends, and youtube sentiment in one surface</p>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <span class="badge" id="api-status">api unknown</span>
-        <span class="badge" id="last-updated">last updated -</span>
-      </div>
-    </header>
+  <div class="app">
+    <aside class="siderail">
+      <div class="brand">Fantasy Baseball</div>
+      <nav class="nav" id="nav">
+        <button class="nav-btn active" data-view="home">Home</button>
+        <button class="nav-btn" data-view="trends">Trends</button>
+        <button class="nav-btn" data-view="social">Social</button>
+        <button class="nav-btn" data-view="leagues">Leagues</button>
+      </nav>
+    </aside>
 
-    <section class="kpi-grid">
-      <div class="kpi"><div class="label">tracked players</div><div class="value" id="total-players">-</div></div>
-      <div class="kpi"><div class="label">youtube sources</div><div class="value" id="source-count">-</div></div>
-      <div class="kpi"><div class="label">videos scanned (7d)</div><div class="value" id="video-count">-</div></div>
-      <div class="kpi"><div class="label">hot mentions (7d)</div><div class="value" id="hot-mentions">-</div></div>
-    </section>
-
-    <section class="layout">
-      <article class="card">
-        <h2>player universe</h2>
-        <div id="error-message"></div>
-        <div class="toolbar">
-          <input id="search-input" class="input" placeholder="search player or team" />
-          <select id="position-filter" class="select">
-            <option value="">all positions</option>
-            <option value="C">C</option><option value="1B">1B</option><option value="2B">2B</option>
-            <option value="3B">3B</option><option value="SS">SS</option><option value="OF">OF</option>
-            <option value="SP">SP</option><option value="RP">RP</option>
-          </select>
-          <button class="btn" onclick="loadPlayers()">refresh</button>
+    <main class="content">
+      <section class="topbar">
+        <div>
+          <div class="title" id="page-title">Home</div>
+          <div class="muted" id="page-subtitle">Dashboard overview</div>
         </div>
-        <div id="players-container">
-          <div class="skeleton"></div>
-        </div>
-      </article>
+        <div class="muted" id="api-status">checking api...</div>
+      </section>
 
-      <aside class="stack">
-        <article class="card">
-          <h2>home run leaders</h2>
-          <div id="hr-leaders"><div class="skeleton"></div></div>
+      <section id="view-home">
+        <div class="kpi-grid" id="home-kpis"></div>
+        <div class="split" style="margin-top:12px;">
+          <article class="panel">
+            <h3 style="margin:0 0 10px;">Player Universe</h3>
+            <div class="toolbar">
+              <input id="search-input" class="input" placeholder="Search player/team" />
+              <button class="btn" onclick="loadHome()">Refresh</button>
+            </div>
+            <div id="home-table"></div>
+          </article>
+          <div class="stack">
+            <article class="panel">
+              <h3 style="margin:0 0 10px;">Power Leaders</h3>
+              <div id="home-leaders"></div>
+            </article>
+            <article class="panel">
+              <h3 style="margin:0 0 10px;">Quick Query (Power Profiles)</h3>
+              <div id="home-query"></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-trends" class="hidden">
+        <article class="panel">
+          <div class="toolbar">
+            <select id="trend-window" class="select">
+              <option value="today">Today</option>
+              <option value="7d" selected>Last 7d</option>
+              <option value="30d">Last 30d</option>
+            </select>
+            <button class="btn" onclick="loadTrends()">Apply</button>
+          </div>
+          <div id="trends-kpis" class="kpi-grid"></div>
         </article>
-        <article class="card">
-          <h2>most discussed players</h2>
-          <div id="discussed-list"><div class="skeleton"></div></div>
+        <article class="panel" style="margin-top:12px;">
+          <h3 style="margin:0 0 10px;">Trend Leaders</h3>
+          <div id="trends-table"></div>
         </article>
-      </aside>
-    </section>
+      </section>
 
-    <section class="card">
-      <h2>youtube sentiment engine</h2>
-      <p class="muted" style="margin-top:0;margin-bottom:10px;">evidence-linked sentiment from fantasy baseball podcast channels</p>
-      <div id="sentiment-overview">
-        <div class="sentiment-grid">
-          <div class="skeleton"></div>
-          <div class="skeleton"></div>
-        </div>
-      </div>
-    </section>
+      <section id="view-social" class="hidden">
+        <article class="panel">
+          <h3 style="margin:0 0 10px;">Sentiment Risers / Fallers</h3>
+          <div class="split">
+            <div id="social-risers"></div>
+            <div id="social-fallers"></div>
+          </div>
+        </article>
+        <article class="panel" style="margin-top:12px;">
+          <h3 style="margin:0 0 10px;">Most Discussed</h3>
+          <div id="social-discussed"></div>
+        </article>
+      </section>
+
+      <section id="view-leagues" class="hidden">
+        <article class="panel">
+          <h3 style="margin:0 0 6px;">Exposure Tracker</h3>
+          <p class="muted" style="margin:0 0 10px;">NFBC-style exposure view from tracked league rosters.</p>
+          <div id="leagues-meta" class="muted" style="margin-bottom:8px;"></div>
+          <div id="leagues-table"></div>
+        </article>
+      </section>
+    </main>
   </div>
 
   <script>
     let API_BASE = null;
-    let allPlayers = [];
+    let players = [];
 
     async function resolveApiBase() {
       const host = window.location.hostname || '127.0.0.1';
-      const candidates = [
-        `http://${host}:8002/api`,
-        `http://${host}:8000/api`,
-        'http://127.0.0.1:8002/api',
-        'http://127.0.0.1:8000/api'
-      ];
-
-      for (const base of candidates) {
+      const bases = [`http://${host}:8002/api`, `http://${host}:8000/api`, 'http://127.0.0.1:8002/api'];
+      for (const b of bases) {
         try {
-          const r = await fetch(`${base}/health`, { method: 'GET' });
-          if (r.ok) return base;
+          const r = await fetch(`${b}/health`);
+          if (r.ok) return b;
         } catch (_) {}
       }
-      return candidates[0];
+      return bases[0];
     }
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      API_BASE = await resolveApiBase();
-      checkHealth();
-      loadPlayers();
-      loadLeaders();
-      loadSentiment();
+    function setView(view) {
+      const sections = ['home','trends','social','leagues'];
+      sections.forEach(s => document.getElementById(`view-${s}`).classList.toggle('hidden', s !== view));
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
 
-      let debounce;
-      document.getElementById('search-input').addEventListener('input', () => {
-        clearTimeout(debounce);
-        debounce = setTimeout(filterPlayers, 220);
-      });
-      document.getElementById('position-filter').addEventListener('change', filterPlayers);
-    });
+      const titles = {
+        home: ['Home', 'Dashboard overview'],
+        trends: ['Trends', 'Today / 7d / 30d performance windows'],
+        social: ['Social', 'Fantasy analysis aggregation and sentiment'],
+        leagues: ['Leagues', 'Roster exposure and concentration analytics'],
+      };
+      document.getElementById('page-title').textContent = titles[view][0];
+      document.getElementById('page-subtitle').textContent = titles[view][1];
 
-    function nowTime() {
-      return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      if (view === 'trends') loadTrends();
+      if (view === 'social') loadSocial();
+      if (view === 'leagues') loadLeagues();
     }
 
-    async function checkHealth() {
-      try {
-        const r = await fetch(`${API_BASE}/health`);
-        if (!r.ok) throw new Error();
-        document.getElementById('api-status').textContent = 'api live';
-        document.getElementById('api-status').style.color = '#22c55e';
-      } catch {
-        document.getElementById('api-status').textContent = 'api offline';
-        document.getElementById('api-status').style.color = '#f87171';
-        showError('backend api not reachable on localhost:8000');
-      }
-      document.getElementById('last-updated').textContent = `updated ${nowTime()}`;
-    }
-
-    async function loadPlayers() {
-      const container = document.getElementById('players-container');
-      container.innerHTML = '<div class="skeleton"></div>';
-
-      try {
-        const r = await fetch(`${API_BASE}/players/?limit=80`);
-        if (!r.ok) throw new Error('failed to load players');
-        allPlayers = await r.json();
-        document.getElementById('total-players').textContent = allPlayers.length;
-        document.getElementById('last-updated').textContent = `updated ${nowTime()}`;
-        filterPlayers();
-      } catch (e) {
-        container.innerHTML = `<div class="error">${e.message}</div>`;
-      }
-    }
-
-    function filterPlayers() {
-      const search = document.getElementById('search-input').value.toLowerCase();
-      const position = document.getElementById('position-filter').value;
-
-      let rows = allPlayers;
-      if (search) {
-        rows = rows.filter(p => (p.name || '').toLowerCase().includes(search) || (p.team || '').toLowerCase().includes(search));
-      }
-      if (position) rows = rows.filter(p => p.position === position);
-      renderPlayers(rows.slice(0, 60));
-    }
-
-    function formatPosition(raw) {
-      const p = (raw ?? '').toString().trim().toUpperCase();
-      const valid = new Set(['C','1B','2B','3B','SS','OF','SP','RP','DH','UTIL']);
-      return valid.has(p) ? p : '-';
-    }
-
-    function renderPlayers(players) {
-      const container = document.getElementById('players-container');
-      if (!players.length) {
-        container.innerHTML = '<p class="muted">no players match this filter</p>';
+    function renderTable(containerId, rows, columns) {
+      const el = document.getElementById(containerId);
+      if (!rows || !rows.length) {
+        el.innerHTML = '<p class="muted">No data available yet.</p>';
         return;
       }
-
-      container.innerHTML = `
-        <table class="table">
-          <thead><tr><th>player</th><th>pos</th><th>power</th><th>ratio</th><th>team</th></tr></thead>
-          <tbody>
-            ${players.map(p => `
-              <tr>
-                <td><strong>${p.name || 'unknown'}</strong></td>
-                <td><span class="chip">${formatPosition(p.position)}</span></td>
-                <td class="metric">${p.hr ?? '-'} hr</td>
-                <td class="metric">avg ${p.avg ?? '-'} • ops ${p.ops ?? '-'}</td>
-                <td class="muted">${p.team || '-'}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
+      const head = columns.map(c => `<th>${c.label}</th>`).join('');
+      const body = rows.map(r => `<tr>${columns.map(c => `<td>${r[c.key] ?? '-'}</td>`).join('')}</tr>`).join('');
+      el.innerHTML = `<table class="table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
     }
 
-    async function loadLeaders() {
-      const container = document.getElementById('hr-leaders');
-      try {
-        const r = await fetch(`${API_BASE}/players/stats/leaders?stat=hr&limit=6`);
-        if (!r.ok) throw new Error('leaders unavailable');
-        const rows = await r.json();
-        if (!rows.length) {
-          container.innerHTML = '<p class="muted">no hr data yet</p>';
-          return;
-        }
+    async function loadHome() {
+      const q = document.getElementById('search-input')?.value?.trim()?.toLowerCase() || '';
+      const playersResp = await fetch(`${API_BASE}/players/?limit=250`);
+      players = playersResp.ok ? await playersResp.json() : [];
+      const filtered = q ? players.filter(p => (p.name || '').toLowerCase().includes(q) || (p.team || '').toLowerCase().includes(q)) : players;
 
-        container.innerHTML = `<div class="mini-list">${rows.map((p, i) => `
-          <div class="mini-item">
-            <div class="title">${i + 1}. ${p.name || 'unknown'}</div>
-            <div class="meta">${p.team || '-'} • ${p.position || '-'}</div>
-            <div class="metric">${p.hr || 0} hr</div>
-          </div>`).join('')}</div>`;
-      } catch (e) {
-        container.innerHTML = `<div class="error">${e.message}</div>`;
+      const trendsResp = await fetch(`${API_BASE}/stats/trends/overview?window=7d`);
+      const trends = trendsResp.ok ? await trendsResp.json() : null;
+
+      const kpis = [
+        { label: 'Tracked players', value: filtered.length || 0 },
+        { label: 'Season', value: trends?.season ?? '-' },
+        { label: 'Avg HR', value: trends?.metrics?.avg_hr ?? '-' },
+        { label: 'Avg OPS', value: trends?.metrics?.avg_ops ?? '-' },
+      ];
+      document.getElementById('home-kpis').innerHTML = kpis.map(k => `<div class="kpi"><div class="label">${k.label}</div><div class="value">${k.value}</div></div>`).join('');
+
+      renderTable('home-table', filtered.slice(0, 100), [
+        { key: 'name', label: 'Player' },
+        { key: 'position', label: 'Pos' },
+        { key: 'team', label: 'Team' },
+        { key: 'hr', label: 'HR' },
+        { key: 'ops', label: 'OPS' },
+      ]);
+
+      const leadersResp = await fetch(`${API_BASE}/players/stats/leaders?stat=hr&limit=8`);
+      const leaders = leadersResp.ok ? await leadersResp.json() : [];
+      renderTable('home-leaders', leaders, [
+        { key: 'name', label: 'Player' },
+        { key: 'team', label: 'Team' },
+        { key: 'hr', label: 'HR' },
+      ]);
+
+      const queryResp = await fetch(`${API_BASE}/stats/queries/power_profiles?start_year=2020&end_year=2025&limit=8`);
+      const queryData = queryResp.ok ? await queryResp.json() : { rows: [] };
+      renderTable('home-query', queryData.rows, [
+        { key: 'name', label: 'Player' },
+        { key: 'avg_hr', label: 'Avg HR' },
+        { key: 'barrel_pct', label: 'Barrel %' },
+        { key: 'avg_exit_velo', label: 'Avg EV' },
+      ]);
+    }
+
+    async function loadTrends() {
+      const window = document.getElementById('trend-window').value;
+      const resp = await fetch(`${API_BASE}/stats/trends/overview?window=${window}`);
+      if (!resp.ok) {
+        document.getElementById('trends-kpis').innerHTML = '<p class="muted">Unable to load trends.</p>';
+        document.getElementById('trends-table').innerHTML = '';
+        return;
       }
+      const data = await resp.json();
+      const kpis = [
+        { label: `Window`, value: data.window_label },
+        { label: 'Tracked players', value: data.metrics.tracked_players },
+        { label: 'Avg HR', value: data.metrics.avg_hr },
+        { label: 'Avg OPS', value: data.metrics.avg_ops },
+      ];
+      document.getElementById('trends-kpis').innerHTML = kpis.map(k => `<div class="kpi"><div class="label">${k.label}</div><div class="value">${k.value}</div></div>`).join('');
+      renderTable('trends-table', data.leaders || [], [
+        { key: 'name', label: 'Player' },
+        { key: 'hr', label: 'HR' },
+        { key: 'ops', label: 'OPS' },
+        { key: 'sb', label: 'SB' },
+      ]);
     }
 
-    async function loadSentiment() {
-      const container = document.getElementById('sentiment-overview');
-      const discussedContainer = document.getElementById('discussed-list');
-      try {
-        const r = await fetch(`${API_BASE}/sentiment/overview?days=7&limit=6`);
-        if (!r.ok) throw new Error('sentiment api unavailable');
-        const data = await r.json();
-
-        const risers = data.widgets?.sentiment_risers || [];
-        const fallers = data.widgets?.sentiment_fallers || [];
-        const discussed = data.widgets?.most_discussed || [];
-
-        document.getElementById('source-count').textContent = data.source_count ?? '-';
-        document.getElementById('video-count').textContent = data.video_count ?? '-';
-        document.getElementById('hot-mentions').textContent = discussed[0]?.mentions ?? 0;
-
-        const renderSentimentList = (rows, type) => {
-          if (!rows.length) return '<p class="muted">no data yet</p>';
-          return `<div class="mini-list">${rows.map(r => {
-            const cls = r.sentiment > 0.1 ? 'signal-pos' : r.sentiment < -0.1 ? 'signal-neg' : 'signal-neutral';
-            const sign = r.sentiment > 0 ? '+' : '';
-            const evidence = r.evidence?.[0]?.url ? `<a class="muted" href="${r.evidence[0].url}" target="_blank">evidence link</a>` : '<span class="muted">no link</span>';
-            return `<div class="mini-item">
-              <div class="title">${r.player}</div>
-              <div class="meta">${r.mentions} mentions • ${r.consensus_sources} sources</div>
-              <div class="${cls}">${sign}${(r.sentiment * 100).toFixed(0)} sentiment • conviction ${(r.conviction * 100).toFixed(0)}%</div>
-              ${evidence}
-            </div>`;
-          }).join('')}</div>`;
-        };
-
-        container.innerHTML = `
-          <div class="sentiment-grid">
-            <div>
-              <h3 style="margin:0 0 10px;font-size:.95rem;color:#bfe3ca">sentiment risers</h3>
-              ${renderSentimentList(risers, 'pos')}
-            </div>
-            <div>
-              <h3 style="margin:0 0 10px;font-size:.95rem;color:#f7c4c4">sentiment fallers</h3>
-              ${renderSentimentList(fallers, 'neg')}
-            </div>
-          </div>
-        `;
-
-        if (!discussed.length) {
-          discussedContainer.innerHTML = '<p class="muted">no discussion signals yet</p>';
-        } else {
-          discussedContainer.innerHTML = `<div class="mini-list">${discussed.slice(0, 6).map(r => `
-            <div class="mini-item">
-              <div class="title">${r.player}</div>
-              <div class="meta">${r.mentions} mentions • ${r.consensus_sources} sources</div>
-            </div>`).join('')}</div>`;
-        }
-
-      } catch (e) {
-        container.innerHTML = `<div class="error">${e.message}</div>`;
-        discussedContainer.innerHTML = '<p class="muted">discussion data unavailable</p>';
+    async function loadSocial() {
+      const resp = await fetch(`${API_BASE}/sentiment/overview?days=7&limit=8`);
+      if (!resp.ok) {
+        document.getElementById('social-risers').innerHTML = '<p class="muted">Sentiment unavailable.</p>';
+        document.getElementById('social-fallers').innerHTML = '';
+        document.getElementById('social-discussed').innerHTML = '';
+        return;
       }
-      document.getElementById('last-updated').textContent = `updated ${nowTime()}`;
+      const d = await resp.json();
+      renderTable('social-risers', d.widgets?.sentiment_risers || [], [
+        { key: 'player', label: 'Riser' },
+        { key: 'mentions', label: 'Mentions' },
+        { key: 'sentiment', label: 'Sentiment' },
+      ]);
+      renderTable('social-fallers', d.widgets?.sentiment_fallers || [], [
+        { key: 'player', label: 'Faller' },
+        { key: 'mentions', label: 'Mentions' },
+        { key: 'sentiment', label: 'Sentiment' },
+      ]);
+      renderTable('social-discussed', d.widgets?.most_discussed || [], [
+        { key: 'player', label: 'Player' },
+        { key: 'mentions', label: 'Mentions' },
+        { key: 'consensus_sources', label: 'Sources' },
+      ]);
     }
 
-    function showError(message) {
-      const el = document.getElementById('error-message');
-      el.innerHTML = `<div class="error">${message}</div>`;
-      setTimeout(() => (el.innerHTML = ''), 4500);
+    async function loadLeagues() {
+      const resp = await fetch(`${API_BASE}/leagues/exposure`);
+      if (!resp.ok) {
+        document.getElementById('leagues-meta').textContent = 'Unable to load league exposure.';
+        document.getElementById('leagues-table').innerHTML = '';
+        return;
+      }
+      const d = await resp.json();
+      document.getElementById('leagues-meta').textContent = d.status === 'empty'
+        ? 'No roster records loaded yet. This module is ready for your real roster ingest.'
+        : `Tracking ${d.team_count} teams.`;
+
+      renderTable('leagues-table', d.rows || [], [
+        { key: 'player_name', label: 'Player' },
+        { key: 'teams_holding', label: 'Teams Holding' },
+        { key: 'exposure_pct', label: 'Exposure %' },
+      ]);
     }
+
+    async function boot() {
+      API_BASE = await resolveApiBase();
+      const health = await fetch(`${API_BASE}/health`).then(r => r.ok).catch(() => false);
+      document.getElementById('api-status').textContent = health ? `API live (${API_BASE})` : `API unavailable (${API_BASE})`;
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => setView(btn.dataset.view));
+      });
+
+      document.getElementById('search-input').addEventListener('input', () => loadHome());
+
+      setView('home');
+      await loadHome();
+    }
+
+    boot();
   </script>
 </body>
 </html>
