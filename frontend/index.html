@@ -18,6 +18,7 @@
       --bad: #dc2626;
       --radius: 16px;
       --shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
+      --control-h: 38px;
     }
 
     * { box-sizing: border-box; }
@@ -49,6 +50,28 @@
       font-weight: 700;
       padding: 10px 12px 16px;
       letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-mark {
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--brand);
+    }
+
+    .brand-mark svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .nav {
@@ -60,12 +83,36 @@
       border: 1px solid transparent;
       background: transparent;
       text-align: left;
-      height: 42px;
+      height: var(--control-h);
       border-radius: 12px;
       padding: 0 12px;
       color: #334155;
       cursor: pointer;
       font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .nav-btn .icon {
+      width: 16px;
+      height: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: currentColor;
+      flex: 0 0 16px;
+    }
+
+    .nav-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .nav-btn.active {
@@ -75,11 +122,12 @@
     }
 
     .content {
-      padding: 22px;
+      padding: 16px 22px 22px;
       display: grid;
-      gap: 14px;
+      gap: 8px;
       max-width: 1400px;
       width: 100%;
+      align-content: start;
     }
 
     .topbar {
@@ -89,20 +137,49 @@
       gap: 8px;
       border: 1px solid var(--line);
       background: var(--surface);
-      border-radius: var(--radius);
-      padding: 14px 16px;
+      border-radius: 12px;
+      min-height: 52px;
+      padding: 12px;
       box-shadow: var(--shadow);
+      margin-bottom: 12px;
     }
 
-    .title { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
+    .title { font-size: 1.1rem; line-height: 1; font-weight: 700; letter-spacing: -0.01em; }
+    #page-subtitle {
+      margin-top: 2px;
+      font-size: 0.84rem;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 54vw;
+    }
     .muted { color: var(--muted); }
 
     .panel {
       border: 1px solid var(--line);
       background: var(--surface);
       border-radius: var(--radius);
-      padding: 16px;
+      padding: 14px;
       box-shadow: var(--shadow);
+    }
+
+    .panel.dense {
+      padding: 10px 12px;
+    }
+
+    .panel h3 {
+      margin: 0 0 8px;
+      font-size: 1.02rem;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }
+
+    .panel h4 {
+      margin: 0 0 6px;
+      font-size: 0.92rem;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
     }
 
     .kpi-grid {
@@ -124,7 +201,7 @@
 
     .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
     .input, .select, .btn {
-      height: 38px;
+      height: var(--control-h);
       border-radius: 10px;
       border: 1px solid #cbd5e1;
       background: #fff;
@@ -158,12 +235,37 @@
 <body>
   <div class="app">
     <aside class="siderail">
-      <div class="brand">Fantasy Baseball</div>
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M8 16V8h5.5"/><path d="M8 12h5"/><path d="M14.5 8h1.5v8"/></svg>
+        </span>
+        <span>Front Office</span>
+      </div>
       <nav class="nav" id="nav">
-        <button class="nav-btn active" data-view="home">Home</button>
-        <button class="nav-btn" data-view="trends">Trends</button>
-        <button class="nav-btn" data-view="social">Social</button>
-        <button class="nav-btn" data-view="leagues">Leagues</button>
+        <button class="nav-btn active" data-view="home">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.8V21h13V9.8"/></svg>
+          </span>
+          <span>Home</span>
+        </button>
+        <button class="nav-btn" data-view="trends">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M3 19h18"/><path d="m6 15 4-4 3 3 5-6"/></svg>
+          </span>
+          <span>Game Trends</span>
+        </button>
+        <button class="nav-btn" data-view="social">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 1 1-4.2-7.4"/><circle cx="11" cy="12" r="2.2"/><path d="M21 3v5h-5"/></svg>
+          </span>
+          <span>Social Insights</span>
+        </button>
+        <button class="nav-btn" data-view="leagues">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M3.5 9h17"/><path d="M8 20V9"/></svg>
+          </span>
+          <span>Fantasy Leagues</span>
+        </button>
       </nav>
     </aside>
 
@@ -180,7 +282,7 @@
         <div class="kpi-grid" id="home-kpis"></div>
         <div class="split" style="margin-top:12px;">
           <article class="panel">
-            <h3 style="margin:0 0 10px;">Player Universe</h3>
+            <h3>Player Universe</h3>
             <div class="toolbar">
               <input id="search-input" class="input" placeholder="Search player/team" />
               <button class="btn" onclick="loadHome()">Refresh</button>
@@ -189,11 +291,11 @@
           </article>
           <div class="stack">
             <article class="panel">
-              <h3 style="margin:0 0 10px;">Power Leaders</h3>
+              <h3>Power Leaders</h3>
               <div id="home-leaders"></div>
             </article>
             <article class="panel">
-              <h3 style="margin:0 0 10px;">Quick Query (Power Profiles)</h3>
+              <h3>Quick Query (Power Profiles)</h3>
               <div id="home-query"></div>
             </article>
           </div>
@@ -215,33 +317,33 @@
           <div id="trends-kpis" class="kpi-grid"></div>
         </article>
         <article class="panel" style="margin-top:12px;">
-          <h3 style="margin:0 0 10px;">Trend Leaders</h3>
+          <h3>Trend Leaders</h3>
           <div id="trends-table"></div>
         </article>
       </section>
 
       <section id="view-social" class="hidden">
-        <article class="panel">
-          <h3 style="margin:0 0 10px;">Sentiment Risers / Fallers</h3>
+        <article class="panel dense">
+          <h3>Sentiment Risers / Fallers</h3>
           <div class="split">
             <div id="social-risers"></div>
             <div id="social-fallers"></div>
           </div>
         </article>
-        <article class="panel" style="margin-top:12px;">
-          <h3 style="margin:0 0 10px;">Most Discussed</h3>
+        <article class="panel dense" style="margin-top:12px;">
+          <h3>Most Discussed</h3>
           <div id="social-discussed"></div>
         </article>
       </section>
 
       <section id="view-leagues" class="hidden">
-        <article class="panel">
-          <h3 style="margin:0 0 6px;">Exposure Tracker</h3>
+        <article class="panel dense">
+          <h3>Exposure Tracker</h3>
           <p class="muted" style="margin:0 0 10px;">NFBC-style exposure view from tracked league rosters.</p>
           <div id="leagues-meta" class="muted" style="margin-bottom:8px;"></div>
           <div id="leagues-table"></div>
           <div style="margin-top:12px;">
-            <h4 style="margin:0 0 8px;">League Summary</h4>
+            <h4>League Summary</h4>
             <div id="leagues-by-league"></div>
           </div>
         </article>
@@ -272,12 +374,14 @@
 
       const titles = {
         home: ['Home', 'Dashboard overview'],
-        trends: ['Trends', 'Today / 7d / 30d performance windows'],
-        social: ['Social', 'Fantasy analysis aggregation and sentiment'],
-        leagues: ['Leagues', 'Roster exposure and concentration analytics'],
+        trends: ['Game Trends', 'Today / 7d / 30d performance windows'],
+        social: ['Social Insights', 'Fantasy analysis aggregation and sentiment'],
+        leagues: ['Fantasy Leagues', 'Roster exposure and concentration analytics'],
       };
       document.getElementById('page-title').textContent = titles[view][0];
-      document.getElementById('page-subtitle').textContent = titles[view][1];
+      const subtitle = document.getElementById('page-subtitle');
+      subtitle.textContent = titles[view][1];
+      subtitle.style.display = (view === 'social' || view === 'leagues') ? 'none' : 'block';
 
       if (view === 'trends') loadTrends();
       if (view === 'social') loadSocial();
