@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
+import re
 import sys
 
 from etl.config import new_batch_id, ESPN_LEAGUE_YEAR as CURRENT_SEASON
@@ -163,12 +164,23 @@ async def run_backfill(source: str, start_year: int, end_year: int) -> list[dict
     return results
 
 
+def _parse_season_range(value: str) -> tuple[int, int]:
+    """Validate and parse a YYYY-YYYY season range string."""
+    m = re.fullmatch(r"(\d{4})-(\d{4})", value.strip())
+    if not m:
+        raise argparse.ArgumentTypeError(f"invalid season range '{value}', expected YYYY-YYYY")
+    start, end = int(m.group(1)), int(m.group(2))
+    if start > end:
+        raise argparse.ArgumentTypeError(f"start year {start} must be <= end year {end}")
+    return start, end
+
+
 def main():
     parser = argparse.ArgumentParser(description="Fantasy Baseball ETL Pipeline")
     parser.add_argument("--full", action="store_true", help="Run full pipeline (all sources)")
     parser.add_argument("--source", type=str, choices=VALID_SOURCES, help="Run a single source")
     parser.add_argument(
-        "--seasons", type=str, default=None,
+        "--seasons", type=_parse_season_range, default=None,
         help="Year range for backfill, e.g. '2020-2025'. Runs pipeline once per season.",
     )
     args = parser.parse_args()
@@ -182,8 +194,7 @@ def main():
     source = "full" if args.full else args.source
 
     if args.seasons:
-        parts = args.seasons.split("-")
-        start_year, end_year = int(parts[0]), int(parts[1])
+        start_year, end_year = args.seasons
         results = asyncio.run(run_backfill(source=source, start_year=start_year, end_year=end_year))
         print(f"\nBackfill complete ({start_year}-{end_year}):")
         for r in results:

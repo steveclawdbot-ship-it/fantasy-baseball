@@ -62,7 +62,8 @@ async def get_player_detail(player_id: int, db: AsyncSession = Depends(get_db)):
         "SELECT overall_rank, position_rank, hit_future_value, power_future_value, "
         "speed_future_value, field_future_value, overall_future_value, "
         "eta, risk_level, ranking_source, hype_score, notes "
-        "FROM prospects WHERE player_id = :pid"
+        "FROM prospects WHERE player_id = :pid "
+        "ORDER BY (ranking_date IS NULL), ranking_date DESC, overall_rank ASC LIMIT 1"
     )
 
     scouting_notes = await query_rows(

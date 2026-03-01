@@ -250,9 +250,23 @@ SERVING_VIEWS: list[str] = [
 
 
 async def create_serving_views(db) -> None:
-    """Drop and recreate all serving views."""
+    """Drop and recreate all serving views.
+
+    Handles the case where a name exists as a table (legacy) rather than a
+    view — renames the table to _legacy_* before creating the view.
+    """
     for view_name in SERVING_VIEW_NAMES:
-        await db.execute(f"DROP VIEW IF EXISTS {view_name}")
+        cursor = await db.execute(
+            "SELECT type FROM sqlite_master WHERE name = ?", (view_name,)
+        )
+        row = await cursor.fetchone()
+        if row:
+            if row[0] == "table":
+                await db.execute(
+                    f"ALTER TABLE [{view_name}] RENAME TO [_legacy_{view_name}]"
+                )
+            else:
+                await db.execute(f"DROP VIEW IF EXISTS {view_name}")
     for ddl in SERVING_VIEWS:
         await db.execute(ddl)
     await db.commit()
