@@ -1,7 +1,8 @@
+import os
 import sqlite3
 from pathlib import Path
 
-DB_PATH = Path('/home/jesse/clawd-steve/data/fantasy_baseball.db')
+DB_PATH = Path(os.getenv("FANTASY_DB_PATH", "./fantasy_baseball.db"))
 
 
 def _count(cur, table: str) -> int:
