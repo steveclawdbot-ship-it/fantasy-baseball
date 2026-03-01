@@ -1,7 +1,6 @@
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
-from sqlalchemy.pool import StaticPool
 import logging
 import os
 
@@ -15,7 +14,6 @@ DATABASE_URL = f"sqlite+aiosqlite:///{_db_path}"
 engine = create_async_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
     echo=False  # Set to True for SQL query logging
 )
 
