@@ -281,7 +281,7 @@ async def resolve_milb(db, batch_id: str) -> int:
             if existing:
                 # Update player_level if it was MLB and now they're in minors
                 await db.execute(
-                    "UPDATE core_player SET player_level = ?, updated_at = ? WHERE id = ? AND player_level != 'MLB'",
+                    "UPDATE core_player SET player_level = ?, updated_at = ? WHERE id = ? AND player_level = 'MLB'",
                     (player_level, datetime.utcnow(), existing[0]),
                 )
                 count += 1

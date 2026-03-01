@@ -8,7 +8,8 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# Simple lock to prevent concurrent ETL runs
+# Lock to prevent concurrent ETL runs
+_lock = asyncio.Lock()
 _running = False
 
 
@@ -27,12 +28,7 @@ class ETLSource(str, Enum):
 async def _run_etl(source: str) -> None:
     """Execute the ETL pipeline in background."""
     global _running
-    if _running:
-        logger.warning("ETL already running, skipping")
-        return
-    _running = True
     try:
-        # Import here to avoid circular imports at module load
         from etl.runner import run_pipeline
         await run_pipeline(source=source)
     except Exception:
@@ -47,8 +43,11 @@ async def trigger_sync(
     source: ETLSource = Query(ETLSource.full, description="Which source(s) to sync"),
 ):
     """Trigger an ETL sync as a background task."""
-    if _running:
-        raise HTTPException(status_code=409, detail="ETL pipeline is already running")
+    global _running
+    async with _lock:
+        if _running:
+            raise HTTPException(status_code=409, detail="ETL pipeline is already running")
+        _running = True
     background_tasks.add_task(_run_etl, source.value)
     return {"status": "started", "source": source.value}
 

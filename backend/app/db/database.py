@@ -2,11 +2,13 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.pool import StaticPool
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
-# SQLite database URL
-DATABASE_URL = "sqlite+aiosqlite:///./fantasy_baseball.db"
+# SQLite database URL — use the same env var as the ETL pipeline
+_db_path = os.getenv("FANTASY_DB_PATH", "./fantasy_baseball.db")
+DATABASE_URL = f"sqlite+aiosqlite:///{_db_path}"
 
 # Create async engine
 engine = create_async_engine(
@@ -34,7 +36,7 @@ async def init_db():
         try:
             from etl.schema.migrate import run_migrations
             from etl.db import get_connection
-            async with get_connection() as etl_db:
+            async with get_connection(_db_path) as etl_db:
                 await run_migrations(etl_db)
             logger.info("ETL schema migrations applied.")
         except Exception as mig_err:

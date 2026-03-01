@@ -11,7 +11,7 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Database
 # ---------------------------------------------------------------------------
-DEFAULT_DB_PATH = "/home/jesse/clawd-steve/data/fantasy_baseball.db"
+DEFAULT_DB_PATH = "./fantasy_baseball.db"
 DB_PATH: str = os.getenv("FANTASY_DB_PATH", DEFAULT_DB_PATH)
 
 # Ensure parent directory exists when running on a fresh machine
