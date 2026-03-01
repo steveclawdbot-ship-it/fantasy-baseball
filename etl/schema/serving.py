@@ -53,6 +53,7 @@ SERVING_VIEWS: list[str] = [
     LEFT JOIN core_batting_season cbs
         ON cbs.player_id = cp.id
         AND cbs.season = (SELECT MAX(season) FROM core_batting_season WHERE player_id = cp.id)
+    WHERE cp.is_active = 1
     """,
 
     # ---------------------------------------------------------------

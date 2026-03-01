@@ -79,7 +79,6 @@ async def create_player(player_data: dict, db: AsyncSession = Depends(get_db)):
         if not name:
             raise HTTPException(status_code=400, detail="'name' is required")
 
-        now = text("datetime('now')")
         result = await db.execute(
             text(
                 "INSERT INTO core_player (display_name, position, mlb_team, player_level, created_at, updated_at) "
@@ -123,7 +122,7 @@ async def update_player(player_id: int, player_data: dict, db: AsyncSession = De
     """
     # Verify the player exists
     check = await db.execute(text("SELECT id FROM core_player WHERE id = :id"), {"id": player_id})
-    if not await check.first() if hasattr(check, 'first') else not check.fetchone():
+    if check.first() is None:
         raise HTTPException(status_code=404, detail="Player not found")
 
     # Map view column names to core_player columns
@@ -164,19 +163,21 @@ async def update_player(player_id: int, player_data: dict, db: AsyncSession = De
 
 @router.delete("/{player_id}")
 async def delete_player(player_id: int, db: AsyncSession = Depends(get_db)):
-    """Delete a player.
+    """Soft-delete a player.
 
-    Deletes from core_player directly since 'players' is a read-only view.
+    Sets is_active = 0 on core_player rather than hard-deleting, to avoid
+    orphaning rows in the 10+ core_* tables that reference core_player(id).
     """
-    check = await db.execute(text("SELECT id FROM core_player WHERE id = :id"), {"id": player_id})
-    row = check.first() if hasattr(check, 'first') else check.fetchone()
-    if not row:
+    check = await db.execute(text("SELECT id FROM core_player WHERE id = :id AND is_active = 1"), {"id": player_id})
+    if check.first() is None:
         raise HTTPException(status_code=404, detail="Player not found")
 
-    await db.execute(text("DELETE FROM core_player_source_id WHERE player_id = :id"), {"id": player_id})
-    await db.execute(text("DELETE FROM core_player WHERE id = :id"), {"id": player_id})
+    await db.execute(
+        text("UPDATE core_player SET is_active = 0, updated_at = datetime('now') WHERE id = :id"),
+        {"id": player_id},
+    )
     await db.commit()
-    logger.info(f"Deleted player ID: {player_id}")
+    logger.info(f"Soft-deleted player ID: {player_id}")
     return {"message": "Player deleted successfully"}
 
 

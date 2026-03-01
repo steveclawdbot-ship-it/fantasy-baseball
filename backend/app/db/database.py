@@ -1,3 +1,4 @@
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.pool import StaticPool
@@ -17,6 +18,14 @@ engine = create_async_engine(
     poolclass=StaticPool,
     echo=False  # Set to True for SQL query logging
 )
+
+
+# Enable SQLite foreign key enforcement for every connection (matches etl/db.py)
+@event.listens_for(engine.sync_engine, "connect")
+def _set_sqlite_pragma(dbapi_conn, connection_record):
+    cursor = dbapi_conn.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 # Create async session factory
 AsyncSessionLocal = async_sessionmaker(
