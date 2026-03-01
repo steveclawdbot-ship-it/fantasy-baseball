@@ -1,21 +1,9 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
 
-# Fantasy Baseball API startup (stable local runtime)
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VENV="$ROOT/.venv"
+# Fantasy Baseball API Startup Script
 
-if [[ ! -x "$VENV/bin/python" ]]; then
-  echo "[setup] creating venv at $VENV"
-  python3 -m venv "$VENV"
-fi
+echo "Starting Fantasy Baseball API..."
 
-echo "[setup] installing backend deps"
-"$VENV/bin/python" -m pip install -q --upgrade pip
-"$VENV/bin/python" -m pip install -q -r "$ROOT/backend/requirements.txt"
-
-export FANTASY_DB_PATH="${FANTASY_DB_PATH:-/home/jesse/clawd-steve/data/fantasy_baseball.db}"
-
-echo "[run] fantasy api on http://0.0.0.0:8000"
-cd "$ROOT/backend"
-exec "$VENV/bin/python" -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+# Start API server - app is in current directory
+echo "Starting Uvicorn server on http://0.0.0.0:8000"
+./venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload

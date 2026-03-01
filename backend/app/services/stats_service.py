@@ -1,6 +1,5 @@
 import logging
 from typing import Dict, List, Optional
-import pandas as pd
 from pybaseball import pitching_stats, batting_stats, statcast_pitcher, statcast_batter
 from datetime import datetime, timedelta
 

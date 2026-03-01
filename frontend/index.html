@@ -1,453 +1,186 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fantasy Baseball Dashboard</title>
-  <style>
-    :root {
-      --bg: #f5f7fb;
-      --surface: #ffffff;
-      --surface-2: #f8fafc;
-      --line: #e2e8f0;
-      --text: #0f172a;
-      --muted: #475569;
-      --brand: #2563eb;
-      --brand-soft: #dbeafe;
-      --good: #16a34a;
-      --bad: #dc2626;
-      --radius: 16px;
-      --shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fantasy Baseball Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100dvh;
-    }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
 
-    .app {
-      min-height: 100dvh;
-      display: grid;
-      grid-template-columns: 260px 1fr;
-    }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
 
-    .siderail {
-      border-right: 1px solid var(--line);
-      background: var(--surface);
-      padding: 20px 14px;
-      position: sticky;
-      top: 0;
-      height: 100dvh;
-    }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
 
-    .brand {
-      font-size: 1.1rem;
-      font-weight: 700;
-      padding: 10px 12px 16px;
-      letter-spacing: -0.02em;
-    }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
 
-    .nav {
-      display: grid;
-      gap: 6px;
-    }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
 
-    .nav-btn {
-      border: 1px solid transparent;
-      background: transparent;
-      text-align: left;
-      height: 42px;
-      border-radius: 12px;
-      padding: 0 12px;
-      color: #334155;
-      cursor: pointer;
-      font-weight: 600;
-    }
+        .card h2 {
+            color: #764ba2;
+            margin-bottom: 16px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
 
-    .nav-btn.active {
-      background: var(--brand-soft);
-      border-color: #bfdbfe;
-      color: #1d4ed8;
-    }
+        .checkbox-list {
+            list-style: none;
+        }
 
-    .content {
-      padding: 22px;
-      display: grid;
-      gap: 14px;
-      max-width: 1400px;
-      width: 100%;
-    }
+        .checkbox-list li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      border: 1px solid var(--line);
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 14px 16px;
-      box-shadow: var(--shadow);
-    }
+        .checkbox-list li input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #764ba2;
+            cursor: pointer;
+        }
 
-    .title { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
-    .muted { color: var(--muted); }
+        .checkbox-list li label {
+            cursor: pointer;
+            flex: 1;
+        }
 
-    .panel {
-      border: 1px solid var(--line);
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 16px;
-      box-shadow: var(--shadow);
-    }
+        .section {
+            margin-bottom: 16px;
+        }
 
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-    }
+        .section h3 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
 
-    .kpi { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: var(--surface-2); }
-    .kpi .label { color: var(--muted); font-size: 0.82rem; }
-    .kpi .value { font-size: 1.5rem; font-weight: 700; margin-top: 6px; }
+        .section p {
+            color: #666;
+            line-height: 1.6;
+        }
 
-    .split { display: grid; grid-template-columns: 1.5fr 1fr; gap: 12px; }
-    .stack { display: grid; gap: 12px; }
+        .empty-state {
+            color: #999;
+            font-style: italic;
+        }
 
-    .table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
-    .table th, .table td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; }
-    .table th { color: #334155; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
+        .progress {
+            display: inline-block;
+            background: #eee;
+            border-radius: 10px;
+            padding: 4px 12px;
+            margin-left: 8px;
+            font-size: 0.85rem;
+            color: #666;
+        }
 
-    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-    .input, .select, .btn {
-      height: 38px;
-      border-radius: 10px;
-      border: 1px solid #cbd5e1;
-      background: #fff;
-      color: #0f172a;
-      padding: 0 12px;
-      font-size: 0.9rem;
-    }
-    .btn { background: #eff6ff; color: #1d4ed8; font-weight: 600; cursor: pointer; }
-
-    .chip { display: inline-block; padding: 3px 8px; border-radius: 999px; border: 1px solid #cbd5e1; font-size: 0.75rem; color: #334155; }
-    .good { color: var(--good); }
-    .bad { color: var(--bad); }
-
-    .hidden { display: none !important; }
-
-    @media (max-width: 980px) {
-      .app { grid-template-columns: 1fr; }
-      .siderail {
-        position: static;
-        height: auto;
-        border-right: 0;
-        border-bottom: 1px solid var(--line);
-      }
-      .nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-      .nav-btn { text-align: center; padding: 0; }
-      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .split { grid-template-columns: 1fr; }
-    }
-  </style>
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="app">
-    <aside class="siderail">
-      <div class="brand">Fantasy Baseball</div>
-      <nav class="nav" id="nav">
-        <button class="nav-btn active" data-view="home">Home</button>
-        <button class="nav-btn" data-view="trends">Trends</button>
-        <button class="nav-btn" data-view="social">Social</button>
-        <button class="nav-btn" data-view="leagues">Leagues</button>
-      </nav>
-    </aside>
+    <div class="container">
+        <h1>⚾ Fantasy Baseball Dashboard</h1>
 
-    <main class="content">
-      <section class="topbar">
-        <div>
-          <div class="title" id="page-title">Home</div>
-          <div class="muted" id="page-subtitle">Dashboard overview</div>
-        </div>
-        <div class="muted" id="api-status">checking api...</div>
-      </section>
-
-      <section id="view-home">
-        <div class="kpi-grid" id="home-kpis"></div>
-        <div class="split" style="margin-top:12px;">
-          <article class="panel">
-            <h3 style="margin:0 0 10px;">Player Universe</h3>
-            <div class="toolbar">
-              <input id="search-input" class="input" placeholder="Search player/team" />
-              <button class="btn" onclick="loadHome()">Refresh</button>
+        <div class="grid">
+            <div class="card">
+                <h2>📱 Platforms <span class="progress">0/7 connected</span></h2>
+                <ul class="checkbox-list">
+                    <li><input type="checkbox" id="cbs"><label for="cbs">CBS</label></li>
+                    <li><input type="checkbox" id="fantrax"><label for="fantrax">Fantrax</label></li>
+                    <li><input type="checkbox" id="sleeper"><label for="sleeper">Sleeper</label></li>
+                    <li><input type="checkbox" id="espn"><label for="espn">ESPN</label></li>
+                    <li><input type="checkbox" id="dynasty-platform"><label for="dynasty-platform">Dynasty League (20-team, keeper)</label></li>
+                    <li><input type="checkbox" id="redraft-12"><label for="redraft-12">Redraft (12-team)</label></li>
+                    <li><input type="checkbox" id="redraft-20"><label for="redraft-20">Redraft (20-team)</label></li>
+                    <li><input type="checkbox" id="bestball"><label for="bestball">Best Ball (15-team)</label></li>
+                </ul>
             </div>
-            <div id="home-table"></div>
-          </article>
-          <div class="stack">
-            <article class="panel">
-              <h3 style="margin:0 0 10px;">Power Leaders</h3>
-              <div id="home-leaders"></div>
-            </article>
-            <article class="panel">
-              <h3 style="margin:0 0 10px;">Quick Query (Power Profiles)</h3>
-              <div id="home-query"></div>
-            </article>
-          </div>
+
+            <div class="card">
+                <h2>🏆 Leagues <span class="progress">0/2 active</span></h2>
+                <ul class="checkbox-list">
+                    <li><input type="checkbox" id="dynasty"><label for="dynasty">Dynasty (20-team, keeper)</label></li>
+                    <li><input type="checkbox" id="redraft"><label for="redraft">Redraft (12-team, 20-team)</label></li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>🎯 Target Players</h2>
+                <div class="section">
+                    <h3>ADP Targets</h3>
+                    <p class="empty-state">No targets tracked yet</p>
+                </div>
+                <div class="section">
+                    <h3>Deep Prospects</h3>
+                    <p class="empty-state">No prospects tracked yet</p>
+                </div>
+                <div class="section">
+                    <h3>Trade Value Changes</h3>
+                    <p class="empty-state">No changes tracked yet</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🛠️ Tools Needed <span class="progress">0/3 built</span></h2>
+                <ul class="checkbox-list">
+                    <li><input type="checkbox" id="draft-tool"><label for="draft-tool">Draft/decision tool (pick values)</label></li>
+                    <li><input type="checkbox" id="valuation"><label for="valuation">Valuation engine (current vs. future worth)</label></li>
+                    <li><input type="checkbox" id="prospect-tracker"><label for="prospect-tracker">Prospect research tracker</label></li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>👥 Audience <span class="progress">0/2 defined</span></h2>
+                <ul class="checkbox-list">
+                    <li><input type="checkbox" id="nerds"><label for="nerds">Other fantasy nerds (like you)</label></li>
+                    <li><input type="checkbox" id="public"><label for="public">Public content (articles, rankings)</label></li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>🚀 Active Projects</h2>
+                <p class="empty-state">No active projects yet</p>
+            </div>
         </div>
-      </section>
-
-      <section id="view-trends" class="hidden">
-        <article class="panel">
-          <div class="toolbar">
-            <select id="trend-window" class="select">
-              <option value="today">Today</option>
-              <option value="7d" selected>Last 7d</option>
-              <option value="30d">Last 30d</option>
-            </select>
-            <button class="btn" onclick="loadTrends()">Apply</button>
-            <button class="btn" onclick="syncTrends()">Sync Window Data</button>
-          </div>
-          <div id="trends-meta" class="muted" style="margin-bottom:8px;"></div>
-          <div id="trends-kpis" class="kpi-grid"></div>
-        </article>
-        <article class="panel" style="margin-top:12px;">
-          <h3 style="margin:0 0 10px;">Trend Leaders</h3>
-          <div id="trends-table"></div>
-        </article>
-      </section>
-
-      <section id="view-social" class="hidden">
-        <article class="panel">
-          <h3 style="margin:0 0 10px;">Sentiment Risers / Fallers</h3>
-          <div class="split">
-            <div id="social-risers"></div>
-            <div id="social-fallers"></div>
-          </div>
-        </article>
-        <article class="panel" style="margin-top:12px;">
-          <h3 style="margin:0 0 10px;">Most Discussed</h3>
-          <div id="social-discussed"></div>
-        </article>
-      </section>
-
-      <section id="view-leagues" class="hidden">
-        <article class="panel">
-          <h3 style="margin:0 0 6px;">Exposure Tracker</h3>
-          <p class="muted" style="margin:0 0 10px;">NFBC-style exposure view from tracked league rosters.</p>
-          <div id="leagues-meta" class="muted" style="margin-bottom:8px;"></div>
-          <div id="leagues-table"></div>
-          <div style="margin-top:12px;">
-            <h4 style="margin:0 0 8px;">League Summary</h4>
-            <div id="leagues-by-league"></div>
-          </div>
-        </article>
-      </section>
-    </main>
-  </div>
-
-  <script>
-    let API_BASE = null;
-    let players = [];
-
-    async function resolveApiBase() {
-      const host = window.location.hostname || '127.0.0.1';
-      const bases = [`http://${host}:8002/api`, `http://${host}:8000/api`, 'http://127.0.0.1:8002/api'];
-      for (const b of bases) {
-        try {
-          const r = await fetch(`${b}/health`);
-          if (r.ok) return b;
-        } catch (_) {}
-      }
-      return bases[0];
-    }
-
-    function setView(view) {
-      const sections = ['home','trends','social','leagues'];
-      sections.forEach(s => document.getElementById(`view-${s}`).classList.toggle('hidden', s !== view));
-      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
-
-      const titles = {
-        home: ['Home', 'Dashboard overview'],
-        trends: ['Trends', 'Today / 7d / 30d performance windows'],
-        social: ['Social', 'Fantasy analysis aggregation and sentiment'],
-        leagues: ['Leagues', 'Roster exposure and concentration analytics'],
-      };
-      document.getElementById('page-title').textContent = titles[view][0];
-      document.getElementById('page-subtitle').textContent = titles[view][1];
-
-      if (view === 'trends') loadTrends();
-      if (view === 'social') loadSocial();
-      if (view === 'leagues') loadLeagues();
-    }
-
-    function renderTable(containerId, rows, columns) {
-      const el = document.getElementById(containerId);
-      if (!rows || !rows.length) {
-        el.innerHTML = '<p class="muted">No data available yet.</p>';
-        return;
-      }
-      const head = columns.map(c => `<th>${c.label}</th>`).join('');
-      const body = rows.map(r => `<tr>${columns.map(c => `<td>${r[c.key] ?? '-'}</td>`).join('')}</tr>`).join('');
-      el.innerHTML = `<table class="table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
-    }
-
-    async function loadHome() {
-      const q = document.getElementById('search-input')?.value?.trim()?.toLowerCase() || '';
-      const playersResp = await fetch(`${API_BASE}/players/?limit=250`);
-      players = playersResp.ok ? await playersResp.json() : [];
-      const filtered = q ? players.filter(p => (p.name || '').toLowerCase().includes(q) || (p.team || '').toLowerCase().includes(q)) : players;
-
-      const trendsResp = await fetch(`${API_BASE}/stats/trends/overview?window=7d`);
-      const trends = trendsResp.ok ? await trendsResp.json() : null;
-
-      const kpis = [
-        { label: 'Tracked players', value: filtered.length || 0 },
-        { label: 'Season', value: trends?.season ?? '-' },
-        { label: 'Avg HR', value: trends?.metrics?.avg_hr ?? '-' },
-        { label: 'Avg OPS', value: trends?.metrics?.avg_ops ?? '-' },
-      ];
-      document.getElementById('home-kpis').innerHTML = kpis.map(k => `<div class="kpi"><div class="label">${k.label}</div><div class="value">${k.value}</div></div>`).join('');
-
-      renderTable('home-table', filtered.slice(0, 100), [
-        { key: 'name', label: 'Player' },
-        { key: 'position', label: 'Pos' },
-        { key: 'team', label: 'Team' },
-        { key: 'hr', label: 'HR' },
-        { key: 'ops', label: 'OPS' },
-      ]);
-
-      const leadersResp = await fetch(`${API_BASE}/players/stats/leaders?stat=hr&limit=8`);
-      const leaders = leadersResp.ok ? await leadersResp.json() : [];
-      renderTable('home-leaders', leaders, [
-        { key: 'name', label: 'Player' },
-        { key: 'team', label: 'Team' },
-        { key: 'hr', label: 'HR' },
-      ]);
-
-      const queryResp = await fetch(`${API_BASE}/stats/queries/power_profiles?start_year=2020&end_year=2025&limit=8`);
-      const queryData = queryResp.ok ? await queryResp.json() : { rows: [] };
-      renderTable('home-query', queryData.rows, [
-        { key: 'name', label: 'Player' },
-        { key: 'avg_hr', label: 'Avg HR' },
-        { key: 'barrel_pct', label: 'Barrel %' },
-        { key: 'avg_exit_velo', label: 'Avg EV' },
-      ]);
-    }
-
-    async function syncTrends() {
-      const window = document.getElementById('trend-window').value;
-      const meta = document.getElementById('trends-meta');
-      meta.textContent = 'syncing trend window data...';
-      try {
-        const r = await fetch(`${API_BASE}/stats/trends/sync?window=${window}`, { method: 'POST' });
-        if (!r.ok) throw new Error('sync failed');
-        const data = await r.json();
-        meta.textContent = `synced ${data.rows_upserted || 0} rows for ${window}`;
-        await loadTrends();
-      } catch (e) {
-        meta.textContent = `sync failed: ${e.message}`;
-      }
-    }
-
-    async function loadTrends() {
-      const window = document.getElementById('trend-window').value;
-      const resp = await fetch(`${API_BASE}/stats/trends/overview?window=${window}`);
-      if (!resp.ok) {
-        document.getElementById('trends-meta').textContent = 'Unable to load trends.';
-        document.getElementById('trends-kpis').innerHTML = '<p class="muted">Unable to load trends.</p>';
-        document.getElementById('trends-table').innerHTML = '';
-        return;
-      }
-      const data = await resp.json();
-      document.getElementById('trends-meta').textContent = `${data.window_label} • source: ${data.source}${data.note ? ` • ${data.note}` : ''}`;
-      const kpis = [
-        { label: `Window`, value: data.window_label },
-        { label: 'Tracked players', value: data.metrics.tracked_players },
-        { label: 'Avg HR', value: data.metrics.avg_hr },
-        { label: 'Avg OPS', value: data.metrics.avg_ops },
-      ];
-      document.getElementById('trends-kpis').innerHTML = kpis.map(k => `<div class="kpi"><div class="label">${k.label}</div><div class="value">${k.value}</div></div>`).join('');
-      renderTable('trends-table', data.leaders || [], [
-        { key: 'name', label: 'Player' },
-        { key: 'hr', label: 'HR' },
-        { key: 'ops', label: 'OPS' },
-        { key: 'sb', label: 'SB' },
-      ]);
-    }
-
-    async function loadSocial() {
-      const resp = await fetch(`${API_BASE}/sentiment/overview?days=7&limit=8`);
-      if (!resp.ok) {
-        document.getElementById('social-risers').innerHTML = '<p class="muted">Sentiment unavailable.</p>';
-        document.getElementById('social-fallers').innerHTML = '';
-        document.getElementById('social-discussed').innerHTML = '';
-        return;
-      }
-      const d = await resp.json();
-      renderTable('social-risers', d.widgets?.sentiment_risers || [], [
-        { key: 'player', label: 'Riser' },
-        { key: 'mentions', label: 'Mentions' },
-        { key: 'sentiment', label: 'Sentiment' },
-      ]);
-      renderTable('social-fallers', d.widgets?.sentiment_fallers || [], [
-        { key: 'player', label: 'Faller' },
-        { key: 'mentions', label: 'Mentions' },
-        { key: 'sentiment', label: 'Sentiment' },
-      ]);
-      renderTable('social-discussed', d.widgets?.most_discussed || [], [
-        { key: 'player', label: 'Player' },
-        { key: 'mentions', label: 'Mentions' },
-        { key: 'consensus_sources', label: 'Sources' },
-      ]);
-    }
-
-    async function loadLeagues() {
-      const resp = await fetch(`${API_BASE}/leagues/exposure`);
-      if (!resp.ok) {
-        document.getElementById('leagues-meta').textContent = 'Unable to load league exposure.';
-        document.getElementById('leagues-table').innerHTML = '';
-        document.getElementById('leagues-by-league').innerHTML = '';
-        return;
-      }
-      const d = await resp.json();
-      document.getElementById('leagues-meta').textContent = d.status === 'empty'
-        ? 'No roster records loaded yet. POST /api/leagues/rosters/import to load your real leagues.'
-        : `Tracking ${d.team_count} teams across ${d.league_count} leagues.`;
-
-      renderTable('leagues-table', d.rows || [], [
-        { key: 'player_name', label: 'Player' },
-        { key: 'teams_holding', label: 'Teams Holding' },
-        { key: 'leagues_holding', label: 'Leagues Holding' },
-        { key: 'exposure_pct', label: 'Exposure %' },
-      ]);
-
-      renderTable('leagues-by-league', d.by_league || [], [
-        { key: 'league_name', label: 'League' },
-        { key: 'teams', label: 'Teams' },
-        { key: 'roster_slots', label: 'Roster Slots' },
-      ]);
-    }
-
-    async function boot() {
-      API_BASE = await resolveApiBase();
-      const health = await fetch(`${API_BASE}/health`).then(r => r.ok).catch(() => false);
-      document.getElementById('api-status').textContent = health ? `API live (${API_BASE})` : `API unavailable (${API_BASE})`;
-
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', () => setView(btn.dataset.view));
-      });
-
-      document.getElementById('search-input').addEventListener('input', () => loadHome());
-
-      setView('home');
-      await loadHome();
-    }
-
-    boot();
-  </script>
+    </div>
 </body>
 </html>

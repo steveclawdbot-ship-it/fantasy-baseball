@@ -30,39 +30,44 @@ fantasy-baseball/
 
 ---
 
-## 🚀 Getting Started (Pi-local, lightweight)
+## 🚀 Getting Started
 
-### One command run (recommended)
+### Backend (FastAPI)
 
 ```bash
-cd /home/jesse/clawd-steve/fantasy-baseball
-./run-local.sh
+# Install dependencies
+cd backend
+./venv/bin/pip install -r requirements.txt
+
+# Start backend server
+./start.sh
+
+# Backend runs on: http://localhost:8000
+# API docs: http://localhost:8000/docs
 ```
 
-This will:
-- create/use `.venv`
-- install backend deps from `backend/requirements.txt`
-- start API on `127.0.0.1:8000`
-- healthcheck `/api/health`
-- start frontend on `127.0.0.1:4173`
+### Frontend (Static Dashboard)
 
-Open:
-- Frontend: `http://127.0.0.1:4173`
-- API docs: `http://127.0.0.1:8000/docs`
-
-Stop:
 ```bash
-./stop-local.sh
+# Serve frontend
+cd frontend
+python3 -m http.server 8001
+
+# Frontend runs on: http://localhost:8001
 ```
 
-### Canonical database path
+### Both Together (Root Scripts)
 
-By default, all services use:
-`/home/jesse/clawd-steve/data/fantasy_baseball.db`
-
-Override if needed:
 ```bash
-FANTASY_DB_PATH=/path/to/other.db ./run-local.sh
+# Install npm dependencies
+npm install
+
+# Run both backend and frontend
+npm run dev
+
+# Or run separately
+npm run dev:backend
+npm run dev:frontend
 ```
 
 ---

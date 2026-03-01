@@ -1,19 +1,18 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.pool import StaticPool
 import logging
-import os
 
 logger = logging.getLogger(__name__)
 
-# Keep one canonical DB path across API + ETL + crawlers.
-DEFAULT_DB_PATH = "/home/jesse/clawd-steve/data/fantasy_baseball.db"
-DB_PATH = os.getenv("FANTASY_DB_PATH", DEFAULT_DB_PATH)
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{DB_PATH}")
+# SQLite database URL
+DATABASE_URL = "sqlite+aiosqlite:///./fantasy_baseball.db"
 
 # Create async engine
 engine = create_async_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
     echo=False  # Set to True for SQL query logging
 )
 
@@ -29,16 +28,7 @@ Base = declarative_base()
 
 
 async def init_db():
-    """Initialize database tables and run ETL schema migrations."""
-    try:
-        # Run ETL pipeline migrations (staging + core + serving views)
-        from etl.schema.migrate import run_migrations_from_path
-        await run_migrations_from_path(DB_PATH)
-        logger.info("ETL schema migrations applied.")
-    except Exception as e:
-        # Non-fatal: ETL schema is additive, backend can still start
-        logger.warning(f"ETL schema migration skipped: {e}")
-
+    """Initialize database tables."""
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
