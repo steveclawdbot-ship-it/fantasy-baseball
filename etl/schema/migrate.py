@@ -4,6 +4,7 @@ No Alembic dependency — just ordered Python functions applied in sequence.
 Safe to re-run: tracks applied versions in _schema_version table.
 """
 
+from __future__ import annotations
 import logging
 from etl.schema.staging import create_staging_tables
 from etl.schema.core import create_core_tables

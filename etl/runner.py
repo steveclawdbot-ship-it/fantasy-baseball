@@ -3,8 +3,11 @@
 Usage:
     python -m etl.runner --full
     python -m etl.runner --source batting
-    python -m etl.runner --source espn
+    python -m etl.runner --source pitching
+    python -m etl.runner --source batting --seasons 2020-2025
 """
+
+from __future__ import annotations
 
 import argparse
 import asyncio
@@ -23,14 +26,14 @@ VALID_SOURCES = [
 ]
 
 
-async def run_pipeline(source: str = "full") -> dict:
-    """Run the ETL pipeline for the given source(s).
+async def run_pipeline(source: str = "full", season: int | None = None) -> dict:
+    """Run the ETL pipeline for the given source(s) and season.
 
     Returns a summary dict with counts per stage.
     """
     batch_id = new_batch_id()
-    season = CURRENT_SEASON
-    summary: dict = {"batch_id": batch_id, "extract": {}, "transform": {}}
+    season = season or CURRENT_SEASON
+    summary: dict = {"batch_id": batch_id, "season": season, "extract": {}, "transform": {}}
 
     sources = VALID_SOURCES if source == "full" else [source]
 
@@ -146,10 +149,28 @@ async def _transform(db, source: str, batch_id: str):
         raise ValueError(f"Unknown source: {source}")
 
 
+async def run_backfill(source: str, start_year: int, end_year: int) -> list[dict]:
+    """Run the pipeline for each season from start_year to end_year (inclusive).
+
+    Returns a list of summary dicts, one per season.
+    """
+    results = []
+    for year in range(start_year, end_year + 1):
+        logger.info(f"=== Backfill season {year} ===")
+        summary = await run_pipeline(source=source, season=year)
+        results.append(summary)
+        logger.info(f"Season {year} complete: {summary}")
+    return results
+
+
 def main():
     parser = argparse.ArgumentParser(description="Fantasy Baseball ETL Pipeline")
     parser.add_argument("--full", action="store_true", help="Run full pipeline (all sources)")
     parser.add_argument("--source", type=str, choices=VALID_SOURCES, help="Run a single source")
+    parser.add_argument(
+        "--seasons", type=str, default=None,
+        help="Year range for backfill, e.g. '2020-2025'. Runs pipeline once per season.",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
@@ -159,8 +180,17 @@ def main():
         sys.exit(1)
 
     source = "full" if args.full else args.source
-    result = asyncio.run(run_pipeline(source=source))
-    print(f"\nPipeline result: {result}")
+
+    if args.seasons:
+        parts = args.seasons.split("-")
+        start_year, end_year = int(parts[0]), int(parts[1])
+        results = asyncio.run(run_backfill(source=source, start_year=start_year, end_year=end_year))
+        print(f"\nBackfill complete ({start_year}-{end_year}):")
+        for r in results:
+            print(f"  Season {r['season']}: {r}")
+    else:
+        result = asyncio.run(run_pipeline(source=source))
+        print(f"\nPipeline result: {result}")
 
 
 if __name__ == "__main__":

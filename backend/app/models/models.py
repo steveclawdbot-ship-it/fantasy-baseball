@@ -32,6 +32,7 @@ class Player(Base):
     adp = Column(Float)
     adp_trend = Column(String)  # "up", "down", "stable"
     ownership = Column(Float)  # Percentage owned
+    player_type = Column(String)  # "pitcher" or "hitter"
     
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
@@ -58,6 +59,7 @@ class Player(Base):
             "adp": self.adp,
             "adp_trend": self.adp_trend,
             "ownership": self.ownership,
+            "player_type": self.player_type,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -68,7 +70,7 @@ class PlayerCard(Base):
     __tablename__ = "player_cards"
 
     id = Column(Integer, primary_key=True, index=True)
-    player_id = Column(Integer, ForeignKey("core_player.id"), nullable=False)
+    player_id = Column(Integer, nullable=False, index=True)
     notes = Column(Text)
     tags = Column(JSON)  # ["power hitter", "speed", "prospect"]
     rating = Column(Integer)  # 1-10 scale
@@ -205,6 +207,49 @@ class TradeValue(Base):
     source = Column(String)  # "calculator", "custom", etc.
     
     created_at = Column(DateTime, server_default=func.now())
+
+
+class PitchingStats(Base):
+    """Pitching season stats from serving view (read-only)."""
+    __tablename__ = "pitching_stats"
+
+    id = Column(Integer, primary_key=True, index=True)
+    player_id = Column(Integer, nullable=False, index=True)
+    season = Column(Integer, nullable=False, index=True)
+    games = Column(Integer)
+    wins = Column(Integer)
+    losses = Column(Integer)
+    era = Column(Float)
+    whip = Column(Float)
+    ip = Column(Float)
+    k_per_9 = Column(Float)
+    bb_per_9 = Column(Float)
+    fip = Column(Float)
+    war = Column(Float)
+    recorded_at = Column(DateTime)
+
+
+class PitcherStatcast(Base):
+    """Pitcher Statcast metrics from serving view (read-only)."""
+    __tablename__ = "pitcher_statcast"
+
+    id = Column(Integer, primary_key=True, index=True)
+    player_id = Column(Integer, nullable=False, index=True)
+    season = Column(Integer, nullable=False, index=True)
+    avg_velocity = Column(Float)
+    max_velocity = Column(Float)
+    spin_rate = Column(Float)
+    whiff_pct = Column(Float)
+    chase_pct = Column(Float)
+    xera = Column(Float)
+    xwoba_against = Column(Float)
+    k_pct = Column(Float)
+    bb_pct = Column(Float)
+    pitch_mix_json = Column(Text)
+    extraction_timestamp = Column(DateTime)
+    source = Column(String)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
 
 
 class PlayerOffenseAdvanced(Base):

@@ -22,7 +22,7 @@ def _fetch_pitching_with_fallback(season: int):
     for idx, year in enumerate(years_to_try):
         try:
             logger.info("Fetching pitching stats for %d...", year)
-            df = pitching_stats(year, year)
+            df = pitching_stats(year, year, qual=0)
             logger.info("Retrieved %d pitching rows for %d", len(df), year)
             return df, year
         except Exception as exc:

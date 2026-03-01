@@ -14,6 +14,8 @@ SERVING_VIEW_NAMES = [
     "player_statcast",
     "player_offense_advanced",
     "prospects",
+    "pitching_stats",
+    "pitcher_statcast",
 ]
 
 SERVING_VIEWS: list[str] = [
@@ -47,6 +49,8 @@ SERVING_VIEWS: list[str] = [
         (SELECT AVG(cer.adp) FROM core_espn_roster cer WHERE cer.player_id = cp.id) AS adp,
         NULL AS adp_trend,
         (SELECT AVG(cer.ownership_pct) FROM core_espn_roster cer WHERE cer.player_id = cp.id) AS ownership,
+        CASE WHEN EXISTS (SELECT 1 FROM core_pitching_season cps2 WHERE cps2.player_id = cp.id)
+             THEN 'pitcher' ELSE 'hitter' END AS player_type,
         cp.created_at,
         cp.updated_at
     FROM core_player cp
@@ -192,6 +196,55 @@ SERVING_VIEWS: list[str] = [
             ORDER BY m2.season DESC, m2.level DESC
             LIMIT 1
         )
+    """,
+
+    # ---------------------------------------------------------------
+    # pitching_stats — season pitching data (mirrors player_stats)
+    # ---------------------------------------------------------------
+    """
+    CREATE VIEW IF NOT EXISTS pitching_stats AS
+    SELECT
+        cps.id,
+        cps.player_id,
+        cps.season,
+        cps.games,
+        cps.wins,
+        cps.losses,
+        cps.era,
+        cps.whip,
+        cps.ip,
+        cps.k_per_9,
+        cps.bb_per_9,
+        cps.fip,
+        cps.war,
+        cps.updated_at AS recorded_at
+    FROM core_pitching_season cps
+    """,
+
+    # ---------------------------------------------------------------
+    # pitcher_statcast — pitcher Statcast metrics
+    # ---------------------------------------------------------------
+    """
+    CREATE VIEW IF NOT EXISTS pitcher_statcast AS
+    SELECT
+        cscp.id,
+        cscp.player_id,
+        cscp.season,
+        cscp.avg_velocity,
+        cscp.max_velocity,
+        cscp.spin_rate,
+        cscp.whiff_pct,
+        cscp.chase_pct,
+        cscp.xera,
+        cscp.xwoba_against,
+        cscp.k_pct,
+        cscp.bb_pct,
+        cscp.pitch_mix_json,
+        cscp.updated_at AS extraction_timestamp,
+        'statcast' AS source,
+        cscp.updated_at AS created_at,
+        cscp.updated_at AS updated_at
+    FROM core_statcast_pitcher cscp
     """,
 ]
 
