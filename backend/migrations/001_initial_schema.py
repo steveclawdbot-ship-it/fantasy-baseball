@@ -20,7 +20,9 @@ from app.models.models import (
     Scout, 
     ADPData, 
     Prospect, 
-    TradeValue
+    TradeValue,
+    PlayerOffenseAdvanced,
+    PlayerStatcast
 )
 
 async def create_tables():

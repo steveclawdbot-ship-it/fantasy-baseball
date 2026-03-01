@@ -1,18 +1,19 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
-from sqlalchemy.pool import StaticPool
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
-# SQLite database URL
-DATABASE_URL = "sqlite+aiosqlite:///./fantasy_baseball.db"
+# Keep one canonical DB path across API + ETL + crawlers.
+DEFAULT_DB_PATH = "/home/jesse/clawd-steve/data/fantasy_baseball.db"
+DB_PATH = os.getenv("FANTASY_DB_PATH", DEFAULT_DB_PATH)
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{DB_PATH}")
 
 # Create async engine
 engine = create_async_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
     echo=False  # Set to True for SQL query logging
 )
 

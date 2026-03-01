@@ -205,3 +205,71 @@ class TradeValue(Base):
     source = Column(String)  # "calculator", "custom", etc.
     
     created_at = Column(DateTime, server_default=func.now())
+
+
+class PlayerOffenseAdvanced(Base):
+    """Advanced offensive metrics from Fangraphs-style sources."""
+    __tablename__ = "player_offense_advanced"
+
+    id = Column(Integer, primary_key=True, index=True)
+    player_id = Column(Integer, ForeignKey("players.id"), nullable=False, index=True)
+    season = Column(Integer, nullable=False, index=True)
+
+    # Advanced offensive metrics
+    wrc_plus = Column(Float)  # Weighted Runs Created+ (park/league adjusted)
+    iso = Column(Float)  # Isolated Power (SLG - AVG)
+    bb_pct = Column(Float)  # Walk percentage
+    k_pct = Column(Float)  # Strikeout percentage
+    obp = Column(Float)  # On-base percentage
+    slg = Column(Float)  # Slugging percentage
+    woba = Column(Float)  # Weighted On-Base Average
+    xwoba = Column(Float)  # Expected wOBA (based on exit velo/launch angle)
+
+    # Metadata
+    extraction_timestamp = Column(DateTime, nullable=False)
+    source = Column(String)  # "fangraphs", etc.
+
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
+
+    __table_args__ = (
+        # Unique constraint: one row per player per season
+        {'sqlite_autoincrement': True},
+    )
+
+
+class PlayerStatcast(Base):
+    """Statcast quality-of-contact and athleticism metrics."""
+    __tablename__ = "player_statcast"
+
+    id = Column(Integer, primary_key=True, index=True)
+    player_id = Column(Integer, ForeignKey("players.id"), nullable=False, index=True)
+    season = Column(Integer, nullable=False, index=True)
+
+    # Quality of contact metrics
+    barrel_pct = Column(Float)  # Percentage of batted balls that are "barrels"
+    hard_hit_pct = Column(Float)  # Percentage of balls hit >= 95 mph
+    avg_exit_velocity = Column(Float)  # Average exit velocity (mph)
+    max_exit_velocity = Column(Float)  # Maximum exit velocity (mph)
+    launch_angle = Column(Float)  # Average launch angle (degrees)
+    sweet_spot_pct = Column(Float)  # Percentage of balls hit at 8-32 degree launch angle
+    xslg = Column(Float)  # Expected slugging based on exit velo/launch angle
+
+    # Athleticism metrics
+    sprint_speed = Column(Float)  # ft/sec on competitive runs
+
+    # Rolling windows (stored as JSON for flexibility)
+    rolling_7d = Column(JSON)  # Recent 7-day rolling averages
+    rolling_14d = Column(JSON)  # Recent 14-day rolling averages
+    rolling_30d = Column(JSON)  # Recent 30-day rolling averages
+
+    # Metadata
+    extraction_timestamp = Column(DateTime, nullable=False)
+    source = Column(String)  # "statcast", "baseball_savant", etc.
+
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
+
+    __table_args__ = (
+        {'sqlite_autoincrement': True},
+    )

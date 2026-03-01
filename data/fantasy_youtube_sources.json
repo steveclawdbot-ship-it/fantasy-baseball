@@ -1,0 +1,96 @@
+{
+  "generated_from": "/home/jesse/clawd-steve/data/fantasy_baseball.db",
+  "count": 10,
+  "sources": [
+    {
+      "source_slug": "fantasy-baseball-today-cbs",
+      "show_name": "Fantasy Baseball Today (CBS)",
+      "query": "Fantasy Baseball Today CBS",
+      "channel_hint": "youtube.com/@FantasyBaseballToday",
+      "channel_url": "https://youtube.com/@FantasyBaseballToday",
+      "priority_weight": 1.0,
+      "scrape_enabled": true
+    },
+    {
+      "source_slug": "fantasypros-mlb---leading-off",
+      "show_name": "FantasyPros MLB / Leading Off",
+      "query": "FantasyPros Baseball Podcast",
+      "channel_hint": "youtube.com/@FantasyProsMLB",
+      "channel_url": "https://youtube.com/@FantasyProsMLB",
+      "priority_weight": 0.95,
+      "scrape_enabled": true
+    },
+    {
+      "source_slug": "pitcher-list",
+      "show_name": "Pitcher List",
+      "query": "Pitcher List fantasy baseball",
+      "channel_hint": "youtube.com/@PitcherList",
+      "channel_url": "https://youtube.com/@PitcherList",
+      "priority_weight": 0.9,
+      "scrape_enabled": true
+    },
+    {
+      "source_slug": "rotowire-fantasy-baseball",
+      "show_name": "RotoWire Fantasy Baseball",
+      "query": "RotoWire Fantasy Baseball",
+      "channel_hint": "youtube.com/@rotowire",
+      "channel_url": "https://youtube.com/@rotowire",
+      "priority_weight": 0.9,
+      "scrape_enabled": true
+    },
+    {
+      "source_slug": "rates-and-barrels",
+      "show_name": "Rates & Barrels",
+      "query": "Rates and Barrels fantasy baseball",
+      "channel_hint": "youtube.com/@TheAthleticMLB",
+      "channel_url": "https://youtube.com/@TheAthleticMLB",
+      "priority_weight": 0.85,
+      "scrape_enabled": true
+    },
+    {
+      "source_slug": "sleeper-and-the-bust",
+      "show_name": "Sleeper and the Bust",
+      "query": "Sleeper and the Bust fantasy baseball",
+      "channel_hint": "youtube.com/@FanGraphsBaseball",
+      "channel_url": "https://youtube.com/@FanGraphsBaseball",
+      "priority_weight": 0.85,
+      "scrape_enabled": true
+    },
+    {
+      "source_slug": "in-this-league-fantasy-baseball",
+      "show_name": "In This League Fantasy Baseball",
+      "query": "In This League Fantasy Baseball",
+      "channel_hint": "youtube.com/@InThisLeague",
+      "channel_url": "https://youtube.com/@InThisLeague",
+      "priority_weight": 0.8,
+      "scrape_enabled": true
+    },
+    {
+      "source_slug": "rotoballer-fantasy-baseball",
+      "show_name": "RotoBaller Fantasy Baseball",
+      "query": "RotoBaller Fantasy Baseball",
+      "channel_hint": "youtube.com/@RotoBaller",
+      "channel_url": "https://youtube.com/@RotoBaller",
+      "priority_weight": 0.8,
+      "scrape_enabled": true
+    },
+    {
+      "source_slug": "ftn-fantasy-baseball",
+      "show_name": "FTN Fantasy Baseball",
+      "query": "FTN Fantasy Baseball",
+      "channel_hint": "youtube.com/@FTNFantasy",
+      "channel_url": "https://youtube.com/@FTNFantasy",
+      "priority_weight": 0.75,
+      "scrape_enabled": true
+    },
+    {
+      "source_slug": "locked-on-fantasy-baseball",
+      "show_name": "Locked On Fantasy Baseball",
+      "query": "Locked On Fantasy Baseball",
+      "channel_hint": "youtube.com/@LockedOnFantasyBaseball",
+      "channel_url": "https://youtube.com/@LockedOnFantasyBaseball",
+      "priority_weight": 0.75,
+      "scrape_enabled": true
+    }
+  ]
+}
