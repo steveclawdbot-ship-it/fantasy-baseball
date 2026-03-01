@@ -22,7 +22,7 @@ def _fetch_batting_with_fallback(season: int):
     for idx, year in enumerate(years_to_try):
         try:
             logger.info("Fetching batting stats for %d...", year)
-            df = batting_stats(year, year)
+            df = batting_stats(year, year, qual=0)
             logger.info("Retrieved %d batting rows for %d", len(df), year)
             return df, year
         except Exception as exc:

@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import logging
 
 from app.db.database import init_db, close_db
-from app.api import players, teams, health, stats, sentiment, leagues, etl
+from app.api import players, teams, health, stats, sentiment, leagues, etl, pitching, player_detail
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -47,6 +47,8 @@ app.include_router(stats.router, prefix="/api/stats", tags=["Stats"])
 app.include_router(sentiment.router, prefix="/api/sentiment", tags=["Sentiment"])
 app.include_router(leagues.router, prefix="/api/leagues", tags=["Leagues"])
 app.include_router(etl.router, prefix="/api/etl", tags=["ETL"])
+app.include_router(pitching.router, prefix="/api/pitching", tags=["Pitching"])
+app.include_router(player_detail.router, prefix="/api/player-detail", tags=["Player Detail"])
 
 
 @app.get("/")

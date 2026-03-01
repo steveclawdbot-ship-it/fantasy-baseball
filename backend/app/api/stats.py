@@ -102,6 +102,55 @@ QUERY_PRESETS = {
             LIMIT :limit
         """,
     },
+    "pitching_aces": {
+        "title": "pitching aces (2020-2025)",
+        "description": "multi-season ERA/FIP leaders with Statcast stuff metrics",
+        "sql": """
+            WITH pit_rollup AS (
+              SELECT
+                p.id AS player_id,
+                p.name,
+                COUNT(DISTINCT ps.season) AS seasons_covered,
+                ROUND(AVG(ps.era), 2) AS avg_era,
+                ROUND(AVG(ps.fip), 2) AS avg_fip,
+                ROUND(AVG(ps.k_per_9), 1) AS avg_k9,
+                ROUND(SUM(ps.ip), 0) AS total_ip,
+                ROUND(AVG(ps.war), 1) AS avg_war
+              FROM players p
+              JOIN pitching_stats ps ON ps.player_id = p.id
+              WHERE ps.season BETWEEN :start_year AND :end_year
+              GROUP BY p.id, p.name
+            ),
+            stuff_rollup AS (
+              SELECT
+                player_id,
+                ROUND(AVG(avg_velocity), 1) AS avg_velo,
+                ROUND(AVG(whiff_pct), 1) AS avg_whiff,
+                ROUND(AVG(chase_pct), 1) AS avg_chase,
+                ROUND(AVG(xera), 2) AS avg_xera
+              FROM pitcher_statcast
+              WHERE season BETWEEN :start_year AND :end_year
+              GROUP BY player_id
+            )
+            SELECT
+              pr.name,
+              pr.seasons_covered,
+              pr.avg_era,
+              pr.avg_fip,
+              pr.avg_k9,
+              pr.total_ip,
+              pr.avg_war,
+              sr.avg_velo,
+              sr.avg_whiff AS whiff_pct,
+              sr.avg_chase AS chase_pct,
+              sr.avg_xera AS xera
+            FROM pit_rollup pr
+            LEFT JOIN stuff_rollup sr ON sr.player_id = pr.player_id
+            WHERE pr.seasons_covered >= 2 AND pr.total_ip >= 100
+            ORDER BY pr.avg_era ASC
+            LIMIT :limit
+        """,
+    },
     "xslg_gaps": {
         "title": "xslg vs ops gaps (2020-2025)",
         "description": "players underperforming contact quality",

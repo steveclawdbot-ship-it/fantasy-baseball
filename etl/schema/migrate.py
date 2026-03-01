@@ -4,6 +4,7 @@ No Alembic dependency — just ordered Python functions applied in sequence.
 Safe to re-run: tracks applied versions in _schema_version table.
 """
 
+from __future__ import annotations
 import logging
 from etl.schema.staging import create_staging_tables
 from etl.schema.core import create_core_tables
@@ -56,6 +57,11 @@ async def _migrate_v3_serving(db) -> None:
     await create_serving_views(db)
 
 
+async def _migrate_v4_refresh_serving(db) -> None:
+    """V5: Refresh serving views for player_type + pitching views."""
+    await create_serving_views(db)
+
+
 # Ordered list of migrations.
 # (version, description, function)
 # version=1 represents pre-existing state (no function needed).
@@ -64,6 +70,7 @@ MIGRATIONS: list[tuple[int, str, callable | None]] = [
     (2, "add staging tables", _migrate_v1_staging),
     (3, "add core tables", _migrate_v2_core),
     (4, "rename legacy tables and create serving views", _migrate_v3_serving),
+    (5, "refresh serving views for player_type + pitching views", _migrate_v4_refresh_serving),
 ]
 
 

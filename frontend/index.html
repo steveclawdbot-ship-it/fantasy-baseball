@@ -348,6 +348,43 @@
           </div>
         </article>
       </section>
+
+      <section id="view-player-detail" class="hidden">
+        <div style="margin-bottom:12px;">
+          <button class="btn" onclick="setView('home')">&larr; Back to Players</button>
+        </div>
+        <div class="kpi-grid" id="detail-header"></div>
+        <div class="split" style="margin-top:12px;">
+          <div class="stack">
+            <article class="panel" id="detail-batting-panel">
+              <h3>Batting Stats</h3>
+              <div id="detail-batting"></div>
+            </article>
+            <article class="panel" id="detail-pitching-panel">
+              <h3>Pitching Stats</h3>
+              <div id="detail-pitching"></div>
+            </article>
+            <article class="panel" id="detail-advanced-panel">
+              <h3>Advanced Offense</h3>
+              <div id="detail-advanced"></div>
+            </article>
+          </div>
+          <div class="stack">
+            <article class="panel">
+              <h3>Statcast Metrics</h3>
+              <div id="detail-statcast"></div>
+            </article>
+            <article class="panel">
+              <h3>Prospect Info</h3>
+              <div id="detail-prospect"></div>
+            </article>
+            <article class="panel">
+              <h3>Scouting Notes</h3>
+              <div id="detail-notes"></div>
+            </article>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -368,7 +405,7 @@
     }
 
     function setView(view) {
-      const sections = ['home','trends','social','leagues'];
+      const sections = ['home','trends','social','leagues','player-detail'];
       sections.forEach(s => document.getElementById(`view-${s}`).classList.toggle('hidden', s !== view));
       document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
 
@@ -377,10 +414,12 @@
         trends: ['Game Trends', 'Today / 7d / 30d performance windows'],
         social: ['Social Insights', 'Fantasy analysis aggregation and sentiment'],
         leagues: ['Fantasy Leagues', 'Roster exposure and concentration analytics'],
+        'player-detail': ['Player Detail', 'Full player profile'],
       };
-      document.getElementById('page-title').textContent = titles[view][0];
+      const t = titles[view] || titles.home;
+      document.getElementById('page-title').textContent = t[0];
       const subtitle = document.getElementById('page-subtitle');
-      subtitle.textContent = titles[view][1];
+      subtitle.textContent = t[1];
       subtitle.style.display = (view === 'social' || view === 'leagues') ? 'none' : 'block';
 
       if (view === 'trends') loadTrends();
@@ -395,8 +434,123 @@
         return;
       }
       const head = columns.map(c => `<th>${c.label}</th>`).join('');
-      const body = rows.map(r => `<tr>${columns.map(c => `<td>${r[c.key] ?? '-'}</td>`).join('')}</tr>`).join('');
+      const body = rows.map(r => `<tr>${columns.map(c => {
+        const val = c.render ? c.render(r) : (r[c.key] ?? '-');
+        return `<td>${val}</td>`;
+      }).join('')}</tr>`).join('');
       el.innerHTML = `<table class="table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+    }
+
+    async function showPlayerDetail(playerId) {
+      setView('player-detail');
+      document.getElementById('detail-header').innerHTML = '<div class="kpi"><div class="value">Loading...</div></div>';
+
+      const resp = await fetch(`${API_BASE}/player-detail/${playerId}`);
+      if (!resp.ok) {
+        document.getElementById('detail-header').innerHTML = '<p class="muted">Failed to load player detail.</p>';
+        return;
+      }
+      const d = await resp.json();
+      const p = d.player;
+
+      // Update page title
+      document.getElementById('page-title').textContent = p.name || 'Player Detail';
+      document.getElementById('page-subtitle').textContent = [p.position, p.team, p.player_type === 'pitcher' ? 'P' : 'H'].filter(Boolean).join(' / ');
+
+      // Header KPIs
+      const kpis = [
+        { label: 'Position', value: p.position || '-' },
+        { label: 'Team', value: p.team || '-' },
+        { label: 'Type', value: p.player_type === 'pitcher' ? 'Pitcher' : 'Hitter' },
+        { label: 'ADP', value: p.adp != null ? Number(p.adp).toFixed(1) : '-' },
+      ];
+      document.getElementById('detail-header').innerHTML = kpis.map(k =>
+        `<div class="kpi"><div class="label">${k.label}</div><div class="value">${k.value}</div></div>`
+      ).join('');
+
+      // Batting
+      const batPanel = document.getElementById('detail-batting-panel');
+      if (d.batting_seasons.length) {
+        batPanel.classList.remove('hidden');
+        renderTable('detail-batting', d.batting_seasons, [
+          { key: 'season', label: 'Year' }, { key: 'avg', label: 'AVG' },
+          { key: 'hr', label: 'HR' }, { key: 'rbi', label: 'RBI' },
+          { key: 'sb', label: 'SB' }, { key: 'ops', label: 'OPS' },
+          { key: 'war', label: 'WAR' },
+        ]);
+      } else { batPanel.classList.add('hidden'); }
+
+      // Pitching
+      const pitPanel = document.getElementById('detail-pitching-panel');
+      if (d.pitching_seasons.length) {
+        pitPanel.classList.remove('hidden');
+        renderTable('detail-pitching', d.pitching_seasons, [
+          { key: 'season', label: 'Year' }, { key: 'wins', label: 'W' },
+          { key: 'losses', label: 'L' }, { key: 'era', label: 'ERA' },
+          { key: 'whip', label: 'WHIP' }, { key: 'ip', label: 'IP' },
+          { key: 'k_per_9', label: 'K/9' }, { key: 'fip', label: 'FIP' },
+          { key: 'war', label: 'WAR' },
+        ]);
+      } else { pitPanel.classList.add('hidden'); }
+
+      // Advanced offense
+      const advPanel = document.getElementById('detail-advanced-panel');
+      if (d.advanced_offense.length) {
+        advPanel.classList.remove('hidden');
+        renderTable('detail-advanced', d.advanced_offense, [
+          { key: 'season', label: 'Year' }, { key: 'wrc_plus', label: 'wRC+' },
+          { key: 'iso', label: 'ISO' }, { key: 'bb_pct', label: 'BB%' },
+          { key: 'k_pct', label: 'K%' }, { key: 'woba', label: 'wOBA' },
+          { key: 'xwoba', label: 'xwOBA' },
+        ]);
+      } else { advPanel.classList.add('hidden'); }
+
+      // Statcast — show pitcher or batter metrics
+      if (d.statcast_pitching.length) {
+        renderTable('detail-statcast', d.statcast_pitching, [
+          { key: 'season', label: 'Year' },
+          { key: 'avg_velocity', label: 'Velo' },
+          { key: 'max_velocity', label: 'Max Velo' },
+          { key: 'spin_rate', label: 'Spin' },
+          { key: 'whiff_pct', label: 'Whiff%' },
+          { key: 'chase_pct', label: 'Chase%' },
+          { key: 'xera', label: 'xERA' },
+        ]);
+      } else if (d.statcast_batting.length) {
+        renderTable('detail-statcast', d.statcast_batting, [
+          { key: 'season', label: 'Year' },
+          { key: 'barrel_pct', label: 'Barrel%' },
+          { key: 'hard_hit_pct', label: 'HH%' },
+          { key: 'avg_exit_velocity', label: 'Avg EV' },
+          { key: 'max_exit_velocity', label: 'Max EV' },
+          { key: 'xslg', label: 'xSLG' },
+          { key: 'sprint_speed', label: 'Speed' },
+        ]);
+      } else {
+        document.getElementById('detail-statcast').innerHTML = '<p class="muted">No Statcast data.</p>';
+      }
+
+      // Prospect
+      if (d.prospect) {
+        const pr = d.prospect;
+        document.getElementById('detail-prospect').innerHTML =
+          `<p><strong>Rank:</strong> #${pr.overall_rank || '-'} overall, #${pr.position_rank || '-'} at position</p>` +
+          `<p><strong>FV:</strong> ${pr.overall_future_value || '-'} | <strong>ETA:</strong> ${pr.eta || '-'} | <strong>Risk:</strong> ${pr.risk_level || '-'}</p>` +
+          (pr.notes ? `<p class="muted">${pr.notes}</p>` : '');
+      } else {
+        document.getElementById('detail-prospect').innerHTML = '<p class="muted">Not a ranked prospect.</p>';
+      }
+
+      // Scouting notes
+      if (d.scouting_notes.length) {
+        renderTable('detail-notes', d.scouting_notes, [
+          { key: 'rating', label: 'Rating' },
+          { key: 'notes', label: 'Notes' },
+          { key: 'scout_name', label: 'Scout' },
+        ]);
+      } else {
+        document.getElementById('detail-notes').innerHTML = '<p class="muted">No scouting notes yet.</p>';
+      }
     }
 
     async function loadHome() {
@@ -417,8 +571,9 @@
       document.getElementById('home-kpis').innerHTML = kpis.map(k => `<div class="kpi"><div class="label">${k.label}</div><div class="value">${k.value}</div></div>`).join('');
 
       renderTable('home-table', filtered.slice(0, 100), [
-        { key: 'name', label: 'Player' },
+        { key: 'name', label: 'Player', render: r => `<a href="#" onclick="showPlayerDetail(${r.id}); return false;" style="color:var(--brand);text-decoration:none;font-weight:600;">${r.name || '-'}</a>` },
         { key: 'position', label: 'Pos' },
+        { key: 'player_type', label: 'Type', render: r => `<span class="chip">${r.player_type === 'pitcher' ? 'P' : 'H'}</span>` },
         { key: 'team', label: 'Team' },
         { key: 'hr', label: 'HR' },
         { key: 'ops', label: 'OPS' },
